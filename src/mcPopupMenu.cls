@@ -123,7 +123,7 @@ End Property
 Public Sub Add(ByVal iMenuID As Long, vMenuItem As Variant, Optional bDefault As Boolean = False, Optional bChecked As Boolean = False, Optional eItemState As mceItemStates, Optional ByVal imgUnchecked As Long = 0, Optional ByVal imgChecked As Long = 0)
    
     ' Check to see if it's a menu item (a string) or a submenu (a class).
-    If typeName(vMenuItem) = "String" Then
+    If TypeName(vMenuItem) = "String" Then
        
         If vMenuItem = "-" Then ' Make a seperator
             AppendMenu piHwnd, MF_STRING Or MF_SEPARATOR, iMenuID, ByVal vbNullString
@@ -204,4 +204,5 @@ Dim iHwnd As Long, iX As Long, iY As Long
     Show = TrackPopupMenuEx(piHwnd, TPM_RETURNCMD Or TPM_RIGHTBUTTON, iX, iY, iHwnd, ByVal 0&)
    
 End Function
+
 

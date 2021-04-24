@@ -1,19 +1,20 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
-Object = "{E142732F-A852-11D4-B06C-00500427A693}#1.14#0"; "vbalTbar6.ocx"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "COMDLG32.OCX"
 Object = "{396F7AC0-A0DD-11D3-93EC-00C0DFE7442A}#1.0#0"; "vbalIml6.ocx"
+Object = "{E142732F-A852-11D4-B06C-00500427A693}#1.14#0"; "vbalTbar6.ocx"
 Begin VB.Form frmInterface 
    AutoRedraw      =   -1  'True
    Caption         =   "SVG to GCODE by Avatar-X"
    ClientHeight    =   11010
    ClientLeft      =   165
-   ClientTop       =   510
+   ClientTop       =   555
    ClientWidth     =   19305
    Icon            =   "form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   734
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   1287
+   StartUpPosition =   3  'Windows Default
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True
       AutoSize        =   -1  'True
@@ -45,10 +46,10 @@ Begin VB.Form frmInterface
       Left            =   0
       ScaleHeight     =   280
       ScaleMode       =   3  'Pixel
-      ScaleWidth      =   28
+      ScaleWidth      =   20
       TabIndex        =   3
       Top             =   840
-      Width           =   420
+      Width           =   300
    End
    Begin VB.PictureBox picRulers 
       AutoRedraw      =   -1  'True
@@ -65,7 +66,7 @@ Begin VB.Form frmInterface
       EndProperty
       Height          =   300
       Index           =   0
-      Left            =   390
+      Left            =   300
       ScaleHeight     =   20
       ScaleMode       =   3  'Pixel
       ScaleWidth      =   153
@@ -74,26 +75,26 @@ Begin VB.Form frmInterface
       Width           =   2295
    End
    Begin MSComDlg.CommonDialog COMDLG 
-      Left            =   10680
-      Top             =   120
+      Left            =   14580
+      Top             =   10260
       _ExtentX        =   847
       _ExtentY        =   847
       _Version        =   393216
    End
    Begin VB.ListBox List1 
-      Height          =   7860
-      Left            =   11640
+      Height          =   6300
+      Left            =   11460
       MultiSelect     =   2  'Extended
       TabIndex        =   1
       Top             =   840
-      Width           =   3075
+      Width           =   2835
    End
    Begin VB.PictureBox Picture1 
       AutoRedraw      =   -1  'True
       BackColor       =   &H00FFFFFF&
-      Height          =   7935
-      Left            =   360
-      ScaleHeight     =   525
+      Height          =   7815
+      Left            =   300
+      ScaleHeight     =   517
       ScaleMode       =   3  'Pixel
       ScaleWidth      =   737
       TabIndex        =   0
@@ -115,8 +116,8 @@ Begin VB.Form frmInterface
       _ExtentY        =   767
    End
    Begin vbalIml6.vbalImageList vbalImageList1 
-      Left            =   9480
-      Top             =   0
+      Left            =   960
+      Top             =   9420
       _ExtentX        =   953
       _ExtentY        =   953
       IconSizeX       =   24
@@ -126,25 +127,7 @@ Begin VB.Form frmInterface
       Images          =   "form1.frx":8922
       Version         =   131072
       KeyCount        =   13
-      Keys            =   "0penË™picRulers Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™ÿÿÿÿÿÿÿÿÿÿÿÿ"
-   End
-   Begin VB.Label Label1 
-      Alignment       =   2  'Center
-      Caption         =   "mm"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   238
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   210
-      Left            =   0
-      TabIndex        =   5
-      Top             =   555
-      Width           =   375
+      Keys            =   "Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™Ë™"
    End
 End
 Attribute VB_Name = "frmInterface"
@@ -152,8 +135,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Option Explicit
 
+Option Explicit
 
 Public Zoom As Double
 Public panX As Double
@@ -163,8 +146,6 @@ Dim mY As Single
 Dim oX As Double
 Dim oY As Double
 Dim mouseDown As Boolean
-Public mesure_l As String
-
 
 
 
@@ -189,8 +170,8 @@ Private Sub cmdScale_Click()
             With pData(i)
                 For j = 1 To UBound(.Points)
                     With .Points(j)
-                        .X = scalar * .X
-                        .Y = scalar * .Y
+                        .x = scalar * .x
+                        .y = scalar * .y
                     End With
                 Next
             End With
@@ -217,7 +198,7 @@ End Sub
 
 Private Sub cmd1_Click()
 
-    'parsePath "M 402.85714,489.50504 L -94.285714,92.362183", "" ' vypnuto kompiler error
+    parsePath "M 402.85714,489.50504 L -94.285714,92.362183", ""
     
     drawLines
     
@@ -255,13 +236,6 @@ Private Sub drawLines()
             Picture1.DrawWidth = 1
             Picture1.DrawStyle = 0
             c = .greyLevel * (255 / GREYLEVELS)
-            If .Points(1).pow = "" Then
-               .Points(1).pow = pData(i - 1).Points(1).pow
-               c = pData(i - 1).Points(1).pow
-            Else
-              c = .Points(1).pow
-            End If
-            c = 255 - .Points(1).pow '* (255 / GREYLEVELS) øízení barvy vykreslení grey
             c = RGB(c, c, c)
             cOrig = c
             isDefocused = False
@@ -269,7 +243,7 @@ Private Sub drawLines()
                 isDefocused = layerInfo(.LayerID).Exists("defocused")
             End If
             
-            Picture1.DrawWidth = IIf(isDefocused, 5, 1.5) ' vykreslení linky síla 1,5
+            Picture1.DrawWidth = IIf(isDefocused, 5, 1)
             
             ' Draw a line from the last point
             If lastX <> -10000 And lastY <> -10000 And drawNonCut And .LayerID <> "Cut Boxes" Then
@@ -277,8 +251,8 @@ Private Sub drawLines()
                 
                     ' Dashed line to here
                     Picture1.DrawStyle = DrawStyleConstants.vbDashDot
-                    Picture1.Line ((.Points(1).X + panX) * Zoom, _
-                                    (.Points(1).Y + panY) * Zoom)-( _
+                    Picture1.Line ((.Points(1).x + panX) * Zoom, _
+                                    (.Points(1).y + panY) * Zoom)-( _
                                     lastX, _
                                     lastY), RGB(200, 200, 200)
                     Picture1.DrawStyle = DrawStyleConstants.vbSolid
@@ -297,17 +271,17 @@ Private Sub drawLines()
                 
                 
             
-                Picture1.Line ((.Points(j).X + panX) * Zoom, _
-                                (.Points(j).Y + panY) * Zoom)-( _
-                                (.Points(j + 1).X + panX) * Zoom, _
-                                (.Points(j + 1).Y + panY) * Zoom), c
+                Picture1.Line ((.Points(j).x + panX) * Zoom, _
+                                (.Points(j).y + panY) * Zoom)-( _
+                                (.Points(j + 1).x + panX) * Zoom, _
+                                (.Points(j + 1).y + panY) * Zoom), c
                              
                              
             Next
             
             If UBound(.Points) > 0 And .LayerID <> "Cut Boxes" Then
-                lastX = (.Points(UBound(.Points)).X + panX) * Zoom
-                lastY = (.Points(UBound(.Points)).Y + panY) * Zoom
+                lastX = (.Points(UBound(.Points)).x + panX) * Zoom
+                lastY = (.Points(UBound(.Points)).y + panY) * Zoom
             End If
             
             
@@ -324,8 +298,8 @@ Private Sub drawLines()
                 
                 ReDim polyPoints(UBound(.Points) - 1)
                 For j = 1 To UBound(.Points)
-                    polyPoints(j - 1).X = (.Points(j).X + panX) * Zoom
-                    polyPoints(j - 1).Y = (.Points(j).Y + panY) * Zoom
+                    polyPoints(j - 1).x = (.Points(j).x + panX) * Zoom
+                    polyPoints(j - 1).y = (.Points(j).y + panY) * Zoom
                 Next
                 
                 ' Add any that are fillable.
@@ -350,17 +324,17 @@ Private Sub drawLines()
                 With pData(A)
                     
                 
-                    Picture1.Circle ((.Points(1).X + panX) * Zoom, (.Points(1).Y + panY) * Zoom), 5, vbGreen
+                    Picture1.Circle ((.Points(1).x + panX) * Zoom, (.Points(1).y + panY) * Zoom), 5, vbGreen
                 
                     For j = 1 To UBound(.Points) - 1
                     
                         Picture1.ForeColor = vbRed
                         Picture1.DrawWidth = 3
                         
-                        Picture1.Line ((.Points(j).X + panX) * Zoom, _
-                                        (.Points(j).Y + panY) * Zoom)-( _
-                                        (.Points(j + 1).X + panX) * Zoom, _
-                                        (.Points(j + 1).Y + panY) * Zoom)
+                        Picture1.Line ((.Points(j).x + panX) * Zoom, _
+                                        (.Points(j).y + panY) * Zoom)-( _
+                                        (.Points(j + 1).x + panX) * Zoom, _
+                                        (.Points(j + 1).y + panY) * Zoom)
                     
                         'If j > 1 Then Picture1.Circle ((.Points(j).x + panX) * Zoom, (.Points(j).y + panY) * Zoom), 5, vbBlue
                     
@@ -368,7 +342,7 @@ Private Sub drawLines()
                 
                     Picture1.DrawWidth = 1
                     
-                    Picture1.Circle ((.Points(UBound(.Points)).X + panX) * Zoom, (.Points(UBound(.Points)).Y + panY) * Zoom), 5, vbRed
+                    Picture1.Circle ((.Points(UBound(.Points)).x + panX) * Zoom, (.Points(UBound(.Points)).y + panY) * Zoom), 5, vbRed
                 
                 End With
             End If
@@ -427,8 +401,8 @@ Private Sub Command7_Click()
     'rasterLinePoly Val(Text1)
     'drawLines
     
-    Dim X As Double
-    Dim Y As Double
+    Dim x As Double
+    Dim y As Double
     Dim Ang As Double
     Dim n As Double
     Dim nSeg As Double
@@ -451,31 +425,31 @@ Private Sub Command7_Click()
     'circle
     newLine
     For Ang = 0 To 3.14159 * 2 Step 0.05
-        X = (Cos(Ang) * 200) + 250
-        Y = (Sin(Ang) * 200) + 220
-        addPoint X, Y
+        x = (Cos(Ang) * 200) + 250
+        y = (Sin(Ang) * 200) + 220
+        addPoint x, y
     Next
     
     newLine
     For Ang = 0 To 3.14159 * 2 Step 0.1
-        X = (Cos(Ang) * 200) + 750
-        Y = (Sin(Ang) * 200) + 220
-        addPoint X, Y
+        x = (Cos(Ang) * 200) + 750
+        y = (Sin(Ang) * 200) + 220
+        addPoint x, y
     Next
     
 
     newLine
-    For X = 0 To 1400 Step 4
-        Y = (Sin(X / 160) * 100) + 530
-        addPoint X, Y
+    For x = 0 To 1400 Step 4
+        y = (Sin(x / 160) * 100) + 530
+        addPoint x, y
     Next
     
     'circle
     newLine
     For Ang = 0 To 3.14159 * 2 Step 0.01
-        X = (Cos(Ang) * 200) + 250
-        Y = (Sin(Ang) * 200) + 900
-        addPoint X, Y
+        x = (Cos(Ang) * 200) + 250
+        y = (Sin(Ang) * 200) + 900
+        addPoint x, y
     Next
 
     
@@ -486,9 +460,9 @@ Private Sub Command7_Click()
         addPoint 700, 900
         
         For Ang = ((3.14159 * 2) / nSeg) * n To ((3.14159 * 2) / nSeg) * (n + 1) Step 0.01
-            X = (Cos(Ang) * 200) + 700
-            Y = (Sin(Ang) * 200) + 900
-            addPoint X, Y
+            x = (Cos(Ang) * 200) + 700
+            y = (Sin(Ang) * 200) + 900
+            addPoint x, y
         Next
         
         addPoint 700, 900
@@ -505,9 +479,9 @@ Private Sub Command7_Click()
         addPoint 1200, 900
         
         For Ang = ((3.14159 * 2) / nSeg) * n To ((3.14159 * 2) / nSeg) * (n + 1) Step 0.01
-            X = (Cos(Ang) * 200) + 1200
-            Y = (Sin(Ang) * 200) + 900
-            addPoint X, Y
+            x = (Cos(Ang) * 200) + 1200
+            y = (Sin(Ang) * 200) + 900
+            addPoint x, y
         Next
         
         addPoint 1200, 900
@@ -537,9 +511,12 @@ Private Sub cReBar2_HeightChanged(lNewHeight As Long)
 
 End Sub
 
+Private Sub cReBar1_HeightChanged(lNewHeight As Long)
+
+End Sub
+
 Private Sub Form_Load()
     Zoom = 1
-    mesure_l = "mm"
     ReDim pData(0)
     
     
@@ -548,8 +525,8 @@ Private Sub Form_Load()
     
      With TB1
         .ImageSource = CTBExternalImageList
-         .SetImageList vbalImageList1.hIml
-         .CreateToolbar 24, True, True, True
+        '.SetImageList vbalImageList1.html
+        .CreateToolbar 24, True, True, True
         
         .AddButton "Open", 0, , , "Open", CTBAutoSize, "open"
         .AddButton "Scale", 1, , , "Scale", CTBAutoSize, "scale"
@@ -730,23 +707,16 @@ Private Sub List1_KeyDown(KeyCode As Integer, Shift As Integer)
 
 End Sub
 
-Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub List1_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     Dim A As Long
     Dim R As Long
     Dim i As Long
-    Dim pow As Long
-    Dim LaserPow As String
-    
-    
     
     Dim b As Scripting.Dictionary
     Dim selLines As New Collection
     Dim newLayer As String
     
-    Dim selLine As Integer
-    pow = 0
-    selLine = 0
     
     Dim mc As New mcPopupMenu
     If Button = 2 Then
@@ -754,12 +724,10 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
         For i = 1 To List1.ListCount
             If List1.Selected(i - 1) Then
                 A = List1.ItemData(i - 1)
-                
+        
                 If A > 0 Then
                     selLines.Add A
                 End If
-                'Else
-                selLine = selLine + 1
             End If
         Next
                 
@@ -768,8 +736,8 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
             With pData(A)
                 mc.Add 0, "Layer: " & .LayerID, , , mceGrayed
                 mc.Add 1, "Fillable", , .Fillable
-                mc.Add 2, "Laser POWER"
-                mc.Add 3, "Edit LINE " & A
+                
+            
                 'mc.Add 1, "",,pdata(i).
                 
                 If Not layerInfo.Exists(.LayerID) Then
@@ -798,7 +766,7 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
                 mc.Add 100, selLines.count & " objects selected"
                 mc.Add 0, "-"
                 mc.Add 1, "Fillable", , .Fillable
-                mc.Add 22, "Laser POWER"
+                
                 mc.Add 30, "Set Layer"
             End With
             
@@ -821,14 +789,6 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
                         Exit Sub
                     Case 1
                         .Fillable = Not .Fillable
-                    Case 2
-                        LaserPow = InputBox("Set Laser POWER to 0-255 ?", "Set Laser POWER")
-                         If LaserPow > 0 And LaserPow < 256 Then pData(A).Points(1).pow = LaserPow
-                    Case 3
-                        pow = InputBox("Change point X start ?", "Set new start position X point", pData(A).Points(1).X)
-                        pData(A).Points(1).X = LaserPow
-                        pow = InputBox("Change point X end ?", "Set new end position X point", pData(A).Points(2).X)
-                        pData(A).Points(2).X = LaserPow
                     Case 10
                         If b.Exists("pausebefore") Then
                             b.Remove "pausebefore"
@@ -849,21 +809,8 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
                         newLayer = .LayerID
                     Case 20
                         ' Remove last secmet
-                        'ReDim Preserve pData(A)((UBound(.Points) - 1)
-                        ' ReDim pData((UBound(A) - 1)
-                         ' currentLine = UBound(pData) + 1
-                         ' Set up this line
-                         ' ReDim Preserve pData(A)
+                        ReDim Preserve .Points(UBound(.Points) - 1)
                         drawLines
-                    Case 22
-                        If (pow = 0) Then
-                         LaserPow = InputBox("Set Laser POWER to 0-255 ?", "Set Laser POWER")
-                         If LaserPow > 0 And LaserPow < 256 Then pData(A).Points(1).pow = LaserPow
-                         pow = 10
-                        Else
-                         pData(A).Points(1).pow = LaserPow
-                        End If
-                        
                         
                     Case 30 ' Set layer
                         .LayerID = newLayer
@@ -887,16 +834,15 @@ Private Sub List1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y 
         End Select
         
         updateList
-        drawLines
     End If
     
 End Sub
 
-Private Sub Picture1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Picture1_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
     
 
-    mX = X
-    mY = Y
+    mX = x
+    mY = y
     oX = panX
     oY = panY
         
@@ -905,7 +851,7 @@ Private Sub Picture1_MouseDown(Button As Integer, Shift As Integer, X As Single,
     
 End Sub
 
-Private Sub Picture1_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Picture1_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
 '    Dim p1 As pointD
 '    Dim p2 As pointD
@@ -947,8 +893,8 @@ Private Sub Picture1_MouseMove(Button As Integer, Shift As Integer, X As Single,
 'Exit Sub
 
     If mouseDown Then
-        panX = oX + ((X - mX) / Zoom)
-        panY = oY + ((Y - mY) / Zoom)
+        panX = oX + ((x - mX) / Zoom)
+        panY = oY + ((y - mY) / Zoom)
         drawLines
         Picture1.Refresh
         
@@ -962,15 +908,15 @@ Private Sub fillPoly(lineID As Long, useBlack As Boolean)
     ' Get the bounds of this shape.
     Dim maxX As Double, maxY As Double
     Dim minX As Double, minY As Double
-    Dim X As Double, Y As Double
+    Dim x As Double, y As Double
     
     getPolyBounds lineID, minX, minY, maxX, maxY
     
-    For X = minX To maxX
-        For Y = minY To maxY
+    For x = minX To maxX
+        For y = minY To maxY
         
-            If pointIsInPoly(lineID, X, Y) Then
-                Picture1.PSet (X, Y), IIf(useBlack, vbRed, vbWhite)
+            If pointIsInPoly(lineID, x, y) Then
+                Picture1.PSet (x, y), IIf(useBlack, vbRed, vbWhite)
                 
             End If
         Next
@@ -1126,7 +1072,7 @@ Function updateList()
             List1.AddItem "[Layer " & pData(i).LayerID & " " & IIf(b.Exists("pausebefore"), "PAUSE", "") & "]"
             tLayer = pData(i).LayerID
         End If
-        List1.AddItem "   Line " & i & ": " & IIf(pData(i).Fillable, "F", "") & " (" & UBound(pData(i).Points) & " segs) in " & pData(i).ContainedBy & " L=" & pData(i).Points(1).pow
+        List1.AddItem "   Line " & i & ": " & IIf(pData(i).Fillable, "F", "") & " (" & UBound(pData(i).Points) & " segs) in " & pData(i).ContainedBy
         List1.ItemData(List1.NewIndex) = i
     Next
 
@@ -1141,15 +1087,15 @@ updateList_Error:
 
 End Function
 
-Private Sub Picture1_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Picture1_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     mouseDown = False
     
 End Sub
 
 Private Sub Timer1_Timer()
 
-    Dim X As Long
-    Dim Y As Long
+    Dim x As Long
+    Dim y As Long
     Dim lx As Long, ly As Long
     Dim phase As Long
     
@@ -1157,22 +1103,22 @@ Private Sub Timer1_Timer()
     
     Picture1.Cls
 
-    For X = 1 To 200
-        Y = (Sin((X + phase) / 20) * 50) + 50
-        Picture1.Line (lx, ly)-(X, Y)
-        lx = X
-        ly = Y
+    For x = 1 To 200
+        y = (Sin((x + phase) / 20) * 50) + 50
+        Picture1.Line (lx, ly)-(x, y)
+        lx = x
+        ly = y
     Next
     
     lx = 0
     ly = 0
     
 
-    For X = 1 To 200
-        Y = (Sin((X + phase) / 30) * 50) + 50
-        Picture1.Line (lx, ly)-(X, Y)
-        lx = X
-        ly = Y
+    For x = 1 To 200
+        y = (Sin((x + phase) / 30) * 50) + 50
+        Picture1.Line (lx, ly)-(x, y)
+        lx = x
+        ly = y
     Next
 
 End Sub
@@ -1248,7 +1194,8 @@ Private Sub cmdOpenFile()
         
         
     End If
-         
+    
+    
     Me.Caption = "Av's SVG to GCODE v " & App.Major & "." & App.Minor & "." & App.Revision
 
 End Sub
@@ -1282,7 +1229,7 @@ Sub updateRulers()
     
     'addtolog "The raw pixel difference between each interval is: ", n1
     
-    insideStep = 20: emph = 10  ' insideStep = 20
+    insideStep = 20: emph = 10
     If n1 < 70 Then insideStep = 10: emph = 5
     If n1 < 35 Then insideStep = 5
     
@@ -1297,16 +1244,16 @@ Sub updateRulers()
     rStart = Int(rStart / pixelStep) * pixelStep
     rEnd = (Int(rEnd / pixelStep) + 1) * pixelStep
     For i = rStart To rEnd Step (pixelStep / insideStep)
-        n = measureToRuler(i, True) - 0  ' korekce zobrazení 0 na mìøítku -7
+        n = measureToRuler(i, True)
         If (i * 10000) Mod (pixelStep * 10000) = 0 Then
-            picRulers(0).Line (n, 0)-(n, 16) 'picRulers(0).Line (n, 0)-(n, 16)
+            picRulers(0).Line (n, 0)-(n, 16)
             picRulers(0).PSet (n + 1, 2), picRulers(0).BackColor
             picRulers(0).Print Abs(Round(i))
         Else
             If Round(i / (pixelStep / insideStep)) Mod emph = 0 Then
-                picRulers(0).Line (n, 11)-(n, 17)
+                picRulers(0).Line (n, 11)-(n, 16)
             Else
-                picRulers(0).Line (n, 14)-(n, 17)
+                picRulers(0).Line (n, 13)-(n, 16)
             End If
             
         End If
@@ -1320,17 +1267,17 @@ Sub updateRulers()
     rStart = Int(rStart / pixelStep) * pixelStep
     rEnd = (Int(rEnd / pixelStep) + 1) * pixelStep
     For i = rStart To rEnd Step (pixelStep / insideStep)
-        n = measureToRuler(i, False) + 0 ' korekce zobrazení 0 na mìøítku +2
+        n = measureToRuler(i, False)
         If (i * 10000) Mod (pixelStep * 10000) = 0 Then
-            picRulers(1).Line (0, n)-(25, n)
+            picRulers(1).Line (0, n)-(16, n)
             picRulers(1).PSet (0, n + 1), picRulers(0).BackColor
 
             picRulers(1).Print addEnters(CStr(Abs(Round(i))))
         Else
             If Round(i / (pixelStep / insideStep)) Mod emph = 0 Then
-                picRulers(1).Line (16, n)-(25, n)
+                picRulers(1).Line (11, n)-(16, n)
             Else
-                picRulers(1).Line (20, n)-(25, n)
+                picRulers(1).Line (13, n)-(16, n)
             End If
         End If
     Next
@@ -1345,8 +1292,7 @@ Function addEnters(inSt As String) As String
     ' Add a line feed after each letter
     Dim i As Long
     For i = 1 To Len(inSt)
-        ' addEnters = addEnters & Mid(inSt, i, 1) & vbCrLf
-        addEnters = inSt
+        addEnters = addEnters & Mid(inSt, i, 1) & vbCrLf
     Next
 End Function
 
@@ -1412,8 +1358,8 @@ Function cmdScale()
             With pData(i)
                 For j = 1 To UBound(.Points)
                     With .Points(j)
-                        .X = scalarW * .X
-                        .Y = scalarH * .Y
+                        .x = scalarW * .x
+                        .y = scalarH * .y
                     End With
                 Next
             End With
@@ -1506,9 +1452,9 @@ Private Sub TB1_ButtonClick(ByVal lButton As Long)
                 For i = 1 To UBound(pData)
                     For j = 1 To UBound(pData(i).Points)
                         With pData(i).Points(j)
-                            Swap pData(i).Points(j).X, pData(i).Points(j).Y
+                            Swap pData(i).Points(j).x, pData(i).Points(j).y
                             ' Invert the Y
-                            pData(i).Points(j).Y = 17 - pData(i).Points(j).Y
+                            pData(i).Points(j).y = 17 - pData(i).Points(j).y
                         End With
                     Next
                 Next
@@ -1531,25 +1477,25 @@ Sub cmdFill()
     Dim maxX As Double, maxY As Double
     getExtents maxX, maxY
         
-    If maxX > 210 Or maxY > 297 Then   '                                    velikost tislové plochy
+    If maxX > 24 Or maxY > 18 Then
         MsgBox "Your document is too big to fit on the laser. Please scale first.", vbCritical
         
         Exit Sub
     End If
     
-    D = Val(InputBox("How far apart should the raster lines be in inches (mm)?", "Raster DPI", "0.2"))
+    D = Val(InputBox("How far apart should the raster lines be in inches?", "Raster DPI", "0.004"))
     If D < 0 Then Exit Sub
     
     
-    Dim i As Long              ' pùvodnì celá smièka vypnuta vyplní celý objekt i záloutí
-    For i = 1 To UBound(pData)
-        If pData(i).ContainedBy = 0 And pData(i).Fillable Then
-            Debug.Print "Rasterizing ", i
-            rasterLinePoly i, D, "Fill"
-        End If
-    Next
+    Dim i As Long
+    'For i = 1 To UBound(pData)
+    '    If pData(i).ContainedBy = 0 And pData(i).Fillable Then
+    '        Debug.Print "Rasterizing ", i
+    '        rasterLinePoly i, D, "Fill"
+    '    End If
+    'Next
     
-    'rasterDocument D, "Fill"  ' vyplnuje objekt bez ohledu zákoutí
+    rasterDocument D, "Fill"
     
      
     
@@ -1567,8 +1513,8 @@ Sub doPuzzle()
     Dim pieceW As Double, pieceH As Double
     
     Dim pX As Double, pY As Double
-    Dim X As Double
-    Dim Y As Double
+    Dim x As Double
+    Dim y As Double
     
     Dim multi As Double
     
@@ -1589,18 +1535,18 @@ Sub doPuzzle()
     
     
     Randomize
-    For Y = 1 To piecesH
-        For X = 1 To piecesW
+    For y = 1 To piecesH
+        For x = 1 To piecesW
         
-            If Y = piecesH And X = piecesW Then Exit For
+            If y = piecesH And x = piecesW Then Exit For
             
-            pX = X * pieceW
-            pY = (Y - 1) * pieceH
+            pX = x * pieceW
+            pY = (y - 1) * pieceH
             
             ' Go to the middle
             newLine
             
-            If X < piecesW Then
+            If x < piecesW Then
                 
                 addPoint pX, pY
                 
@@ -1616,7 +1562,7 @@ Sub doPuzzle()
             
             addPoint pX, pY
             
-            If Y < piecesH Then
+            If y < piecesH Then
                 ' Bottom row doesn't get bottom pieces
                 drawPuzzleEdge Int(Rnd * pieceTypes) + 1, False, (Rnd < 0.5), pX, pY, pieceW, pieceH
             End If
@@ -1779,7 +1725,7 @@ Function doPages()
                         
                     
                         With pData(i).Points(j)
-                            If .X >= ppX And .X <= ppW And .Y >= ppY And .Y <= ppH Then
+                            If .x >= ppX And .x <= ppW And .y >= ppY And .y <= ppH Then
                                 
                                 If n = 0 Then
                                     ' Create a new poly
@@ -1792,30 +1738,30 @@ Function doPages()
                                 If lastPointInside = False And j > 1 Then ' Also, this can't be the first point.
                                 
                                     ' Test 1: Top segment
-                                    testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppY
+                                    testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppY
                                     intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                     thisLineLeft = "T"
-                                    If intersect.X = -6666 Then
+                                    If intersect.x = -6666 Then
                                         
                                         ' Right side
-                                        testPoint.X = ppW:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppH
+                                        testPoint.x = ppW:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppH
                                         intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                         thisLineLeft = "R"
-                                        If intersect.X = -6666 Then
+                                        If intersect.x = -6666 Then
                                             ' Bottom
-                                            testPoint.X = ppX:  testPoint.Y = ppH: testPoint2.X = ppW: testPoint2.Y = ppH
+                                            testPoint.x = ppX:  testPoint.y = ppH: testPoint2.x = ppW: testPoint2.y = ppH
                                             intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                             thisLineLeft = "B"
-                                            If intersect.X = -6666 Then
+                                            If intersect.x = -6666 Then
                                                 ' Left
-                                                testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppX: testPoint2.Y = ppH
+                                                testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppX: testPoint2.y = ppH
                                                 intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                                 thisLineLeft = "L"
                                             End If
                                         End If
                                     End If
                                     
-                                    If intersect.X <> -6666 Then ' Did intersect.
+                                    If intersect.x <> -6666 Then ' Did intersect.
                                         If (lastLineLeft = "T" And thisLineLeft = "L") Or (lastLineLeft = "L" And thisLineLeft = "T") Then addPoint3 thePage(n), ppX, ppY
                                         If (lastLineLeft = "L" And thisLineLeft = "B") Or (lastLineLeft = "B" And thisLineLeft = "L") Then addPoint3 thePage(n), ppX, ppH
                                         If (lastLineLeft = "B" And thisLineLeft = "R") Or (lastLineLeft = "R" And thisLineLeft = "B") Then addPoint3 thePage(n), ppW, ppH
@@ -1834,30 +1780,30 @@ Function doPages()
                                     ' Which segment did it intersect?
                                     
                                     ' Test 1: Top segment
-                                    testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppY
+                                    testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppY
                                     intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                     lastLineLeft = "T"
-                                    If intersect.X = -6666 Then
+                                    If intersect.x = -6666 Then
                                         
                                         ' Right side
-                                        testPoint.X = ppW:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppH
+                                        testPoint.x = ppW:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppH
                                         intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                         lastLineLeft = "R"
-                                        If intersect.X = -6666 Then
+                                        If intersect.x = -6666 Then
                                             ' Bottom
-                                            testPoint.X = ppX:  testPoint.Y = ppH: testPoint2.X = ppW: testPoint2.Y = ppH
+                                            testPoint.x = ppX:  testPoint.y = ppH: testPoint2.x = ppW: testPoint2.y = ppH
                                             intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                             lastLineLeft = "B"
-                                            If intersect.X = -6666 Then
+                                            If intersect.x = -6666 Then
                                                 ' Left
-                                                testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppX: testPoint2.Y = ppH
+                                                testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppX: testPoint2.y = ppH
                                                 intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                                 lastLineLeft = "L"
                                             End If
                                         End If
                                     End If
                                     
-                                    If intersect.X <> -6666 Then ' Did intersect.
+                                    If intersect.x <> -6666 Then ' Did intersect.
                                         addPoint2 thePage(n), intersect
                                     End If
                                 
@@ -1891,8 +1837,8 @@ Function doPages()
             For i = 1 To UBound(pData)
                 For j = 1 To UBound(pData(i).Points)
                     With pData(i).Points(j)
-                        .X = .X - ppX
-                        .Y = .Y - ppY
+                        .x = .x - ppX
+                        .y = .y - ppY
                     End With
                 Next
             Next
@@ -1902,9 +1848,9 @@ Function doPages()
                 For i = 1 To UBound(pData)
                     For j = 1 To UBound(pData(i).Points)
                         With pData(i).Points(j)
-                            Swap pData(i).Points(j).X, pData(i).Points(j).Y
+                            Swap pData(i).Points(j).x, pData(i).Points(j).y
                             ' Invert the Y
-                            pData(i).Points(j).Y = (ppW - ppX) - pData(i).Points(j).Y
+                            pData(i).Points(j).y = (ppW - ppX) - pData(i).Points(j).y
                         End With
                     Next
                 Next
@@ -2011,7 +1957,7 @@ Function doPagesOld()
                             
                             
                             
-                            If .X >= ppX And .X <= ppW And .Y >= ppY And .Y <= ppH Then
+                            If .x >= ppX And .x <= ppW And .y >= ppY And .y <= ppH Then
                                 
                                 If n = 0 Then
                                     ' Create a new poly
@@ -2024,30 +1970,30 @@ Function doPagesOld()
                                 If lastPointInside = False And j > 1 Then ' Also, this can't be the first point.
                                 
                                     ' Test 1: Top segment
-                                    testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppY
+                                    testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppY
                                     intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                     thisLineLeft = "T"
-                                    If intersect.X = -6666 Then
+                                    If intersect.x = -6666 Then
                                         
                                         ' Right side
-                                        testPoint.X = ppW:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppH
+                                        testPoint.x = ppW:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppH
                                         intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                         thisLineLeft = "R"
-                                        If intersect.X = -6666 Then
+                                        If intersect.x = -6666 Then
                                             ' Bottom
-                                            testPoint.X = ppX:  testPoint.Y = ppH: testPoint2.X = ppW: testPoint2.Y = ppH
+                                            testPoint.x = ppX:  testPoint.y = ppH: testPoint2.x = ppW: testPoint2.y = ppH
                                             intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                             thisLineLeft = "B"
-                                            If intersect.X = -6666 Then
+                                            If intersect.x = -6666 Then
                                                 ' Left
-                                                testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppX: testPoint2.Y = ppH
+                                                testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppX: testPoint2.y = ppH
                                                 intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                                 thisLineLeft = "L"
                                             End If
                                         End If
                                     End If
                                     
-                                    If intersect.X <> -6666 Then ' Did intersect.
+                                    If intersect.x <> -6666 Then ' Did intersect.
                                     
                                         
                                         If (lastLineLeft = "T" And thisLineLeft = "L") Or (lastLineLeft = "L" And thisLineLeft = "T") Then addPoint3 thePage(n), ppX, ppY
@@ -2073,30 +2019,30 @@ Function doPagesOld()
                                     ' Which segment did it intersect?
                                     
                                     ' Test 1: Top segment
-                                    testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppY
+                                    testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppY
                                     intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                     lastLineLeft = "T"
-                                    If intersect.X = -6666 Then
+                                    If intersect.x = -6666 Then
                                         
                                         ' Right side
-                                        testPoint.X = ppW:  testPoint.Y = ppY: testPoint2.X = ppW: testPoint2.Y = ppH
+                                        testPoint.x = ppW:  testPoint.y = ppY: testPoint2.x = ppW: testPoint2.y = ppH
                                         intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                         lastLineLeft = "R"
-                                        If intersect.X = -6666 Then
+                                        If intersect.x = -6666 Then
                                             ' Bottom
-                                            testPoint.X = ppX:  testPoint.Y = ppH: testPoint2.X = ppW: testPoint2.Y = ppH
+                                            testPoint.x = ppX:  testPoint.y = ppH: testPoint2.x = ppW: testPoint2.y = ppH
                                             intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                             lastLineLeft = "B"
-                                            If intersect.X = -6666 Then
+                                            If intersect.x = -6666 Then
                                                 ' Left
-                                                testPoint.X = ppX:  testPoint.Y = ppY: testPoint2.X = ppX: testPoint2.Y = ppH
+                                                testPoint.x = ppX:  testPoint.y = ppY: testPoint2.x = ppX: testPoint2.y = ppH
                                                 intersect = lineIntersectLine(pData(i).Points(j - 1), pData(i).Points(j), testPoint, testPoint2)
                                                 lastLineLeft = "L"
                                             End If
                                         End If
                                     End If
                                     
-                                    If intersect.X <> -6666 Then ' Did intersect.
+                                    If intersect.x <> -6666 Then ' Did intersect.
                                         addPoint2 thePage(n), intersect
                                     End If
                                 
@@ -2120,8 +2066,8 @@ Function doPagesOld()
                 For i = 1 To UBound(pData)
                     For j = 1 To UBound(pData(i).Points)
                         With pData(i).Points(j)
-                            .X = .X - ppX
-                            .Y = .Y - ppY
+                            .x = .x - ppX
+                            .y = .y - ppY
                         End With
                     Next
                 Next
@@ -2169,8 +2115,8 @@ Private Function addPoint3(theLine As typLine, pX As Double, pY As Double)
     ReDim Preserve theLine.Points(n2)
     
     ' Copy this point
-    theLine.Points(n2).X = pX
-    theLine.Points(n2).Y = pY
+    theLine.Points(n2).x = pX
+    theLine.Points(n2).y = pY
 
 
 End Function
@@ -2282,15 +2228,15 @@ Public Function goTile(nRows As Long, nCols As Long, wOff As Double, hOff As Dou
     
     
     
-    Dim X As Long, Y As Long
-    For Y = 1 To nRows
-        For X = 1 To nCols
+    Dim x As Long, y As Long
+    For y = 1 To nRows
+        For x = 1 To nCols
             count = count + 1
             
             If count > 1 Then ' skpi the first one
                 ' Copy the shapes.
-                duplicateShapes upTo, ((maxX + wOff) * (X - 1)) + (((Y - 1) Mod 2) * colDiff), _
-                    ((maxY + hOff) * (Y - 1)) + (((X - 1) Mod 2) * rowDiff)
+                duplicateShapes upTo, ((maxX + wOff) * (x - 1)) + (((y - 1) Mod 2) * colDiff), _
+                    ((maxY + hOff) * (y - 1)) + (((x - 1) Mod 2) * rowDiff)
             End If
         Next
     Next
@@ -2315,8 +2261,8 @@ Function duplicateShapes(endAt As Long, Xadd As Double, Yadd As Double)
         pData(n) = pData(i)
         
         For j = 1 To UBound(pData(n).Points)
-            pData(n).Points(j).X = pData(n).Points(j).X + Xadd
-            pData(n).Points(j).Y = pData(n).Points(j).Y + Yadd
+            pData(n).Points(j).x = pData(n).Points(j).x + Xadd
+            pData(n).Points(j).y = pData(n).Points(j).y + Yadd
         Next
     Next
 

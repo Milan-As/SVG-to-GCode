@@ -81,7 +81,7 @@ Begin VB.Form frmScale
    End
    Begin VB.Label Label5 
       AutoSize        =   -1  'True
-      Caption         =   "inch"
+      Caption         =   "inch (mm)"
       BeginProperty Font 
          Name            =   "Tahoma"
          Size            =   8.25
@@ -95,11 +95,11 @@ Begin VB.Form frmScale
       Left            =   2700
       TabIndex        =   10
       Top             =   720
-      Width           =   285
+      Width           =   690
    End
    Begin VB.Label Label4 
       AutoSize        =   -1  'True
-      Caption         =   "inch"
+      Caption         =   "inch (mm)"
       BeginProperty Font 
          Name            =   "Tahoma"
          Size            =   8.25
@@ -113,7 +113,7 @@ Begin VB.Form frmScale
       Left            =   2700
       TabIndex        =   9
       Top             =   300
-      Width           =   285
+      Width           =   690
    End
    Begin VB.Label Label3 
       Caption         =   "Scale:"
@@ -192,6 +192,16 @@ Private Sub cmdCancel_Click()
      Unload Me
      
      
+End Sub
+
+Private Sub Form_Load()
+If mesure_l = "in" Then
+  Label4.Caption = "inch"
+  Label5.Caption = "inch"
+Else
+  Label4.Caption = mesure_l
+  Label5.Caption = mesure_l
+End If
 End Sub
 
 Private Sub txtHeight_Change()

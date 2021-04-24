@@ -133,7 +133,7 @@ Private Sub cmdGo_Click()
 
     ' Save
     Dim i As Long
-    For i = 0 To txtInput.ubound
+    For i = 0 To txtInput.UBound
         SaveSetting "SVG to GCODE", "Tile", i, txtInput(i)
     Next
     
@@ -148,10 +148,11 @@ Private Sub Form_Load()
     ' Load last values
     Dim i As Long
     Dim AA As String
-    For i = 0 To txtInput.ubound
+    For i = 0 To txtInput.UBound
         AA = GetSetting("SVG to GCODE", "Tile", i, "")
         If AA <> "" Then
             txtInput(i) = AA
         End If
     Next
 End Sub
+

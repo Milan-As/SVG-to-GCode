@@ -1,9 +1,10 @@
 Attribute VB_Name = "SVGParse"
 Option Explicit
 Public Type pointD
-    x As Double
-    y As Double
+    X As Double
+    Y As Double
     noCut As Byte
+    pow As String
 End Type
 
 Public Type typLine
@@ -28,10 +29,11 @@ Public Type typLine
     LevelNumber As Long 'How many levels deep is this
     
     isDel As Boolean ' Deleted on next iteration
+    pow  As Double
 End Type
 
 Public containList As New Scripting.Dictionary
-
+Public mesure_l As String
 Public pData() As typLine
 Public currentLine As Long
 
@@ -44,6 +46,9 @@ Public GLOBAL_DPI As Double
 Public EXPORT_EXTENTS_X As Double, EXPORT_EXTENTS_Y As Double
 Public LastExportPath As String
 Public CurrentFile As String
+Public barvaX As String
+
+'Public pow() As Double
 
 Dim hasUnfinishedLine As Boolean
 
@@ -51,7 +56,7 @@ Dim hasUnfinishedLine As Boolean
 Function parseSVG(inFile As String)
 
     Dim SVG As New ChilkatXml
-    Dim x As ChilkatXml
+    Dim X As ChilkatXml
     Dim i As Long, j As Long
     
     Dim realW As Double
@@ -88,16 +93,18 @@ Function parseSVG(inFile As String)
         ' Read these numbers to determine the scale of the data inside the file.
         ' width and height are the real-world widths and heights
         ' viewbox is how we're going to scale the numbers in the file (expressed in pixels) to the native units of this program, which is inches
-        
+       
         realW = Val(SVG.GetAttrValue("width"))
         ' Read the unit
         Select Case LCase(Replace(SVG.GetAttrValue("width"), realW, ""))
             Case "in" ' no conversion needed
+            
             Case "mm", "" ' convert from mm
-                realW = realW / 25.4
+                'realW = realW / 25.4
+           
             Case "cm" ' convert from cm
-                realW = realW / 2.54
-        
+                'realW = realW / 2.54
+              
         End Select
         
         realH = Val(SVG.GetAttrValue("height"))
@@ -105,9 +112,9 @@ Function parseSVG(inFile As String)
         Select Case LCase(Replace(SVG.GetAttrValue("height"), realH, ""))
             Case "in" ' no conversion needed
             Case "mm", "" ' convert from mm
-                realH = realH / 25.4
+                'realH = realH / 25.4
             Case "cm" ' convert from cm
-                realH = realH / 2.54
+                'realH = realH / 2.54
         End Select
         
         'MsgBox "Size in inches: " & realW & ", " & realH
@@ -132,7 +139,7 @@ Function parseSVG(inFile As String)
         End If
         
         
-        If realDPI = 1 Then realDPI = 72
+        'If realDPI = 1 Then realDPI = 72
         
         'ttt = InputBox("Detected DPI: " & realDPI & ".  Change it?", "DPI")
         'If ttt <> "" Then
@@ -151,8 +158,8 @@ Function parseSVG(inFile As String)
         With pData(i)
             For j = 1 To UBound(.Points)
                 With .Points(j)
-                    .x = .x / realDPI
-                    .y = .y / realDPI
+                    .X = .X / realDPI
+                    .Y = .Y / realDPI
                 End With
             Next
         End With
@@ -170,8 +177,8 @@ Function parseSVG(inFile As String)
         With pData(i)
             For j = 1 To UBound(.Points)
                 With .Points(j)
-                    minX = Min(minX, .x)
-                    minY = Min(minY, .y)
+                    minX = Min(minX, .X)
+                    minY = Min(minY, .Y)
                 End With
             Next
         End With
@@ -184,8 +191,8 @@ Function parseSVG(inFile As String)
         With pData(i)
             For j = 1 To UBound(.Points)
                 With .Points(j)
-                    .x = .x - minX
-                    .y = .y - minY
+                    .X = .X - minX
+                    .Y = .Y - minY
                 End With
             Next
         End With
@@ -199,7 +206,7 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
 
     ' Loop through my kids and figure out what to do!
     Dim i As Long
-    Dim x As ChilkatXml
+    Dim X As ChilkatXml
     Dim beforeLine As Long
     Dim j As Long
     
@@ -207,6 +214,10 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
     Dim cY As Double
     Dim cW As Double
     Dim cH As Double
+    Dim pow As Double
+    Dim barva As String
+    Dim pozice As Double
+    Dim greyLevel As Byte
     
     Dim beforeGroup As Long
     Dim layerName As String
@@ -217,20 +228,30 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
     Debug.Print "PARSING A KIDS:", currentLayer
     
     
-    Set x = inEle.FirstChild
-    Do Until x Is Nothing
+    Set X = inEle.FirstChild
+    Do Until X Is Nothing
         
-        'MsgBox X.nodeName
+       ' MsgBox x.nodeName
         
-        Select Case LCase(x.Tag)
+        Select Case LCase(X.Tag)
+        
+            Case "sodipodi:namedview"
+                   mesure_l = getAttr(X, "inkscape:document-units", "")
+                  'mesure_l = "svg<sodipodi:namedview:inkscape:"
+                  frmInterface.Label1.Caption = mesure_l
+                   If mesure_l = "mm" Or mesure_l = "in" Then
+                    ' MsgBox ("Scale is in " & mesure_l), vbInformation
+                     Else
+                     MsgBox ("Attention, the document has the wrong ruler. The document should be in mm or inch or machine scale. The document is in the ruler " & mesure_l & "."), vbInformation
+                   End If
             Case "g" ' g is GROUP
                 beforeGroup = currentLine
                 
                 ' Is this group a layer?
-                layerName = getAttr(x, "inkscape:label", "")
+                layerName = getAttr(X, "inkscape:label", "")
                 If layerName = "" Then
-                    If InStr(1, getAttr(x, "id", ""), "layer", vbTextCompare) > 0 Then
-                        layerName = getAttr(x, "id", "")
+                    If InStr(1, getAttr(X, "id", ""), "layer", vbTextCompare) > 0 Then
+                        layerName = getAttr(X, "id", "")
                     End If
                 End If
                 
@@ -238,45 +259,57 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                 
                 'If layerName = "" Then layerName = getAttr(x, "id", "")
                 
-                parseSVGKids x, layerName
+                parseSVGKids X, layerName
                     
-                If getAttr(x, "transform", "") <> "" Then
+                If getAttr(X, "transform", "") <> "" Then
                     ' Transform these lines
                     For j = beforeGroup + 1 To currentLine
-                        transformLine j, getAttr(x, "transform", "")
+                        transformLine j, getAttr(X, "transform", "")
                     Next
                 End If
             
             Case "switch" ' stupid crap
-                parseSVGKids x
-             
+                parseSVGKids X
+                             
             ' SHAPES
             Case "rect", "path", "line", "polyline", "circle", "polygon", "ellipse"
                 beforeLine = currentLine
-                
-                Select Case LCase(x.Tag)
+                               
+                Select Case LCase(X.Tag)
                     Case "rect" ' RECTANGLE
                         
                         newLine currentLayer
-                        cX = Val(getAttr(x, "x", ""))
-                        cY = Val(getAttr(x, "y", ""))
-                        cW = Val(getAttr(x, "width", ""))
-                        cH = Val(getAttr(x, "height", ""))
+                        cX = Val(getAttr(X, "x", ""))
+                        cY = Val(getAttr(X, "y", ""))
+                        cW = Val(getAttr(X, "width", ""))
+                        cH = Val(getAttr(X, "height", ""))
+                        barva = getAttr(X, "style", "")
+                        pozice = InStr(barva, "stroke:")
+                       ' pow = "&h" + Mid(barva, pozice + 8, 2)
+                        'pow = CDec("&h" + Mid(barva, pozice + 8, 2))
+                        barva = 255 - CDec("&h" + Mid(barva, pozice + 8, 2))
+                       ' pow(beforeLine + 1) = 1 'CDec(barva)
                         addPoint cX, cY
                         addPoint cX + cW, cY
                         addPoint cX + cW, cY + cH
                         addPoint cX, cY + cH
                         addPoint cX, cY
+                        'addPoint pow
                         finishLine
-                        
+                        'pData(currentLine).Points(1).pow = barva
                         pData(currentLine).Fillable = True
                     
                     Case "path"
-                        
+                        'newLine currentLayer
                         ' Parse the path.
+                        'barva = getAttr(x, "style", "")
+                        'pozice = InStr(barva, "stroke:")
+                        'barva = 255 - CDec("&h" + Mid(barva, pozice + 8, 2))
+                        'pData(currentLine).Points(1).pow = barva
+                        
                         Dim thePath As String
-                        thePath = getAttr(x, "d", "")
-                        If x.GetAttrValue("fill") <> "" And x.GetAttrValue("fill") <> "none" Then  ' For some reason Illustrator doesn't close paths that are filled
+                        thePath = getAttr(X, "d", "")
+                        If X.GetAttrValue("fill") <> "" And X.GetAttrValue("fill") <> "none" Then  ' For some reason Illustrator doesn't close paths that are filled
                             If Len(thePath) > 0 Then
                                 If LCase(Right(thePath, 1)) = "z" Then
                                     ' ALready closed
@@ -285,8 +318,13 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                                 End If
                             End If
                         End If
-                        
-                        parsePath thePath, currentLayer
+                        barva = getAttr(X, "style", "")
+                        pozice = InStr(barva, "stroke:")
+                        barva = 255 - CDec("&h" + Mid(barva, pozice + 8, 2))
+                        barvaX = barva
+                        'pozice = barva
+                        'pData(currentLine).Points(1).pow = barva
+                        parsePath thePath, currentLayer, barva
                         
                         
                         
@@ -294,18 +332,18 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                     Case "line"
                         ' Add this line
                         newLine currentLayer
-                        addPoint Val(getAttr(x, "x1", "")), Val(getAttr(x, "y1", ""))
-                        addPoint Val(getAttr(x, "x2", "")), Val(getAttr(x, "y2", ""))
+                        addPoint Val(getAttr(X, "x1", "")), Val(getAttr(X, "y1", ""))
+                        addPoint Val(getAttr(X, "x2", "")), Val(getAttr(X, "y2", ""))
                         finishLine
                         
                     Case "polyline"
                         newLine currentLayer
-                        parsePolyLine getAttr(x, "points", "")
+                        parsePolyLine getAttr(X, "points", "")
                         finishLine
                         
                     Case "polygon"
                         newLine currentLayer
-                        parsePolyLine getAttr(x, "points", "")
+                        parsePolyLine getAttr(X, "points", "")
                         finishLine
                         
                         pData(currentLine).Fillable = True
@@ -314,7 +352,7 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                     Case "circle"
                         ' Draw a circle.
                         newLine currentLayer
-                        parseCircle Val(getAttr(x, "cx", "")), Val(getAttr(x, "cy", "")), Val(getAttr(x, "r", ""))
+                        parseCircle Val(getAttr(X, "cx", "")), Val(getAttr(X, "cy", "")), Val(getAttr(X, "r", ""))
                     
                     Case "ellipse" ' Draw an ellipse
                         newLine currentLayer
@@ -323,18 +361,20 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                         '   rx = "13.131983"
                         '   ry="14.142136" />
                         
-                        parseEllipse Val(getAttr(x, "cx", "")), Val(getAttr(x, "cy", "")), Val(getAttr(x, "rx", "")), Val(getAttr(x, "ry", ""))
+                        parseEllipse Val(getAttr(X, "cx", "")), Val(getAttr(X, "cy", "")), Val(getAttr(X, "rx", "")), Val(getAttr(X, "ry", ""))
                 End Select
-                
+                If barva = "" Then barva = barvaX
+                pData(currentLine).Points(1).pow = barva
                 ' Shape transformations
-                If getAttr(x, "transform", "") <> "" Then
+                If getAttr(X, "transform", "") <> "" Then
                     ' Transform these lines
                     For j = beforeLine + 1 To currentLine
-                        transformLine j, getAttr(x, "transform", "")
+                        transformLine j, getAttr(X, "transform", "")
                     Next
                 End If
         End Select
-        Set x = x.NextSibling
+            
+        Set X = X.NextSibling
     Loop
     
     
@@ -344,7 +384,7 @@ End Function
 Function parseCircle(cX As Double, cY As Double, Radi As Double)
 
     Dim A As Double
-    Dim x As Double, y As Double
+    Dim X As Double, Y As Double
     Dim rr As Long
     
     rr = 2
@@ -353,10 +393,10 @@ Function parseCircle(cX As Double, cY As Double, Radi As Double)
     
     For A = 0 To 360 Step rr
         
-        x = Cos(A * (PI / 180)) * Radi + cX
-        y = Sin(A * (PI / 180)) * Radi + cY
+        X = Cos(A * (PI / 180)) * Radi + cX
+        Y = Sin(A * (PI / 180)) * Radi + cY
         
-        addPoint x, y
+        addPoint X, Y
         
         
     Next
@@ -369,7 +409,7 @@ End Function
 Function parseEllipse(cX As Double, cY As Double, RadiX As Double, RadiY As Double)
 
     Dim A As Double
-    Dim x As Double, y As Double
+    Dim X As Double, Y As Double
     Dim rr As Long
     
     rr = 2
@@ -378,10 +418,10 @@ Function parseEllipse(cX As Double, cY As Double, RadiX As Double, RadiY As Doub
     
     For A = 0 To 360 Step rr
         
-        x = Cos(A * (PI / 180)) * RadiX + cX
-        y = Sin(A * (PI / 180)) * RadiY + cY
+        X = Cos(A * (PI / 180)) * RadiX + cX
+        Y = Sin(A * (PI / 180)) * RadiY + cY
         
-        addPoint x, y
+        addPoint X, Y
         
     Next
     
@@ -470,8 +510,8 @@ Function multiplyLineByMatrix(polyID As Long, A As Double, b As Double, c As Dou
     With pData(polyID)
         For j = 1 To UBound(.Points)
             oldPoint = .Points(j)
-            .Points(j).x = (A * oldPoint.x) + (c * oldPoint.y) + e
-            .Points(j).y = (b * oldPoint.x) + (D * oldPoint.y) + f
+            .Points(j).X = (A * oldPoint.X) + (c * oldPoint.Y) + e
+            .Points(j).Y = (b * oldPoint.X) + (D * oldPoint.Y) + f
         Next
     End With
     
@@ -501,12 +541,12 @@ Function parsePolyLine(inLine As String)
         
         
     ' Close the shape.
-    If UBound(pData(currentLine).Points) > 0 Then addPoint (pData(currentLine).Points(1).x), (pData(currentLine).Points(1).y)
+    If UBound(pData(currentLine).Points) > 0 Then addPoint (pData(currentLine).Points(1).X), (pData(currentLine).Points(1).Y)
     
     
 End Function
 
-Function parsePath(inPath As String, currentLayer As String)
+Function parsePath(inPath As String, currentLayer As String, barva As String)
 
     
 
@@ -605,11 +645,11 @@ Function parsePath(inPath As String, currentLayer As String)
                 'If Not isRelative Then
                 newLine currentLayer
                 'pData(currentLine).PathCode = Right(inPath, Len(inPath) - pos)
-                    
+                
                 ' Add the start point to this line
                 addPoint currX, currY
                 
-                
+                 pData(currentLine).Points(1).pow = barva
                 'pData(currentLine).PathCode = pData(currentLine).PathCode & "Move to " & currX & ", " & currY & vbCrLf
                 
                 
@@ -617,6 +657,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 startX = currX: startY = currY
                 gotFirstItem = True
                 hasPrevPoint = False
+                
+                
                 
             Case "L", "l"   ' LINE TO
                 If LCase(char) = char Then isRelative = True    ' Lowercase means relative co-ordinates
@@ -725,8 +767,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token7 = extractToken(inPath, pos)
                 
                 ' Start point
-                pt0.x = currX
-                pt0.y = currY
+                pt0.X = currX
+                pt0.Y = currY
                 
                 ' Set our "current" co-ordinates to this
                 If isRelative Then
@@ -737,8 +779,8 @@ Function parsePath(inPath As String, currentLayer As String)
                     currY = Val(token7)
                 End If
                 
-                pt1.x = currX
-                pt1.y = currY
+                pt1.X = currX
+                pt1.Y = currY
                 
                 parseArcSegment Val(token1), Val(token2), Val(token3), pt0, pt1, (token4 = "1"), (token5 = "1")
                 
@@ -752,8 +794,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 If LCase(char) = char Then isRelative = True    ' Lowercase means relative co-ordinates
                 If Not gotFirstItem Then isRelative = False 'Relative not valid for first item
                
-                pt0.x = currX
-                pt0.y = currY
+                pt0.X = currX
+                pt0.Y = currY
                 
                 ' Extract two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -762,8 +804,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token2 = extractToken(inPath, pos)
                                
                 ' Set into point 0
-                pt1.x = IIf(isRelative, currX, 0) + Val(token1)
-                pt1.y = IIf(isRelative, currY, 0) + Val(token2)
+                pt1.X = IIf(isRelative, currX, 0) + Val(token1)
+                pt1.Y = IIf(isRelative, currY, 0) + Val(token2)
                 
                 
                 ' Extract next two co-ordinates
@@ -773,8 +815,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token2 = extractToken(inPath, pos)
                                
                 ' Set into point 1
-                pt2.x = IIf(isRelative, currX, 0) + Val(token1)
-                pt2.y = IIf(isRelative, currY, 0) + Val(token2)
+                pt2.X = IIf(isRelative, currX, 0) + Val(token1)
+                pt2.Y = IIf(isRelative, currY, 0) + Val(token2)
                 
                 ' Extract next two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -785,8 +827,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 ' Set into point 2
                 currX = IIf(isRelative, currX, 0) + Val(token1)
                 currY = IIf(isRelative, currY, 0) + Val(token2)
-                pt3.x = currX
-                pt3.y = currY
+                pt3.X = currX
+                pt3.Y = currY
                 
 '
                 pInSeg = getPinSeg(pt0, pt3)
@@ -810,8 +852,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 If LCase(char) = char Then isRelative = True    ' Lowercase means relative co-ordinates
                 If Not gotFirstItem Then isRelative = False 'Relative not valid for first item
                
-                pt0.x = currX
-                pt0.y = currY
+                pt0.X = currX
+                pt0.Y = currY
                 
                 ' Extract two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -820,8 +862,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token2 = extractToken(inPath, pos)
                                
                 ' Set into point 0
-                pt1.x = IIf(isRelative, currX, 0) + Val(token1)
-                pt1.y = IIf(isRelative, currY, 0) + Val(token2)
+                pt1.X = IIf(isRelative, currX, 0) + Val(token1)
+                pt1.Y = IIf(isRelative, currY, 0) + Val(token2)
                 
                 ' Extract next two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -832,8 +874,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 ' Set into point 1
                 currX = IIf(isRelative, currX, 0) + Val(token1)
                 currY = IIf(isRelative, currY, 0) + Val(token2)
-                pt2.x = currX
-                pt2.y = currY
+                pt2.X = currX
+                pt2.Y = currY
                 
                 pInSeg = getPinSeg(pt0, pt2)
                 
@@ -858,8 +900,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 If LCase(char) = char Then isRelative = True    ' Lowercase means relative co-ordinates
                 If Not gotFirstItem Then isRelative = False 'Relative not valid for first item
                
-                pt0.x = currX
-                pt0.y = currY
+                pt0.X = currX
+                pt0.Y = currY
                 
                 ' Extract two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -868,8 +910,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token2 = extractToken(inPath, pos)
                                
                 ' Set into point 0
-                pt1.x = IIf(isRelative, currX, 0) + Val(token1)
-                pt1.y = IIf(isRelative, currY, 0) + Val(token2)
+                pt1.X = IIf(isRelative, currX, 0) + Val(token1)
+                pt1.Y = IIf(isRelative, currY, 0) + Val(token2)
                 
                 ' Extract next two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -880,8 +922,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 ' Set into point 1
                 currX = IIf(isRelative, currX, 0) + Val(token1)
                 currY = IIf(isRelative, currY, 0) + Val(token2)
-                pt2.x = currX
-                pt2.y = currY
+                pt2.X = currX
+                pt2.Y = currY
                 
                 pInSeg = getPinSeg(pt0, pt2)
                 
@@ -905,8 +947,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 If LCase(char) = char Then isRelative = True    ' Lowercase means relative co-ordinates
                 If Not gotFirstItem Then isRelative = False 'Relative not valid for first item
                
-                pt0.x = currX
-                pt0.y = currY
+                pt0.X = currX
+                pt0.Y = currY
                 
                 ' Extract two co-ordinates
                 skipWhiteSpace inPath, pos
@@ -915,8 +957,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 token2 = extractToken(inPath, pos)
                                
                 ' Set into point 0
-                pt1.x = IIf(isRelative, currX, 0) + Val(token1)
-                pt1.y = IIf(isRelative, currY, 0) + Val(token2)
+                pt1.X = IIf(isRelative, currX, 0) + Val(token1)
+                pt1.Y = IIf(isRelative, currY, 0) + Val(token2)
                 
                 pInSeg = getPinSeg(pt0, pt1)
                 
@@ -949,8 +991,8 @@ Function parsePath(inPath As String, currentLayer As String)
                 
                 
                 ' Since this is a closed path, mark it as fillable.
-                pData(currentLine).Fillable = True
-                
+                 pData(currentLine).Fillable = True
+                 'pData(currentLine).Points(1).pow = barva
                 'gotFirstItem = False
                 
                 
@@ -960,7 +1002,7 @@ Function parsePath(inPath As String, currentLayer As String)
             
             Case Else
                 Debug.Print "UNSUPPORTED PATH CODE: ", char
-                
+         
             
         End Select
         
@@ -970,11 +1012,10 @@ Function parsePath(inPath As String, currentLayer As String)
             frmInterface.Caption = "Parsing path: " & pos & " / " & Len(inPath)
             DoEvents
         End If
-        
+      
     Loop
     
-    
-    
+  
 
 End Function
 
@@ -1021,8 +1062,8 @@ Function reflectAbout(ptReflect As pointD, ptOrigin As pointD) As pointD
     ' Reflect ptReflect 180 degrees around ptOrigin
     
     
-    reflectAbout.x = (-(ptReflect.x - ptOrigin.x)) + ptOrigin.x
-    reflectAbout.y = (-(ptReflect.y - ptOrigin.y)) + ptOrigin.y
+    reflectAbout.X = (-(ptReflect.X - ptOrigin.X)) + ptOrigin.X
+    reflectAbout.Y = (-(ptReflect.Y - ptOrigin.Y)) + ptOrigin.Y
     
     
 End Function
@@ -1065,17 +1106,17 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
     Theta = Deg2Rad(rotAng)
         
     ' Calculate P1Prime
-    P1Prime.x = (Cos(Theta) * ((P1.x - P2.x) / 2)) + (Sin(Theta) * ((P1.y - P2.y) / 2))
-    P1Prime.y = (-Sin(Theta) * ((P1.x - P2.x) / 2)) + (Cos(Theta) * ((P1.y - P2.y) / 2))
+    P1Prime.X = (Cos(Theta) * ((P1.X - P2.X) / 2)) + (Sin(Theta) * ((P1.Y - P2.Y) / 2))
+    P1Prime.Y = (-Sin(Theta) * ((P1.X - P2.X) / 2)) + (Cos(Theta) * ((P1.Y - P2.Y) / 2))
     
-    P2Prime.x = (Cos(Theta) * ((P2.x - P1.x) / 2)) + (Sin(Theta) * ((P2.y - P1.y) / 2))
-    P2Prime.y = (-Sin(Theta) * ((P2.x - P1.x) / 2)) + (Cos(Theta) * ((P2.y - P1.y) / 2))
+    P2Prime.X = (Cos(Theta) * ((P2.X - P1.X) / 2)) + (Sin(Theta) * ((P2.Y - P1.Y) / 2))
+    P2Prime.Y = (-Sin(Theta) * ((P2.X - P1.X) / 2)) + (Cos(Theta) * ((P2.Y - P1.Y) / 2))
     
-    qTop = ((RX ^ 2) * (RY ^ 2)) - ((RX ^ 2) * (P1Prime.y ^ 2)) - ((RY ^ 2) * (P1Prime.x ^ 2))
+    qTop = ((RX ^ 2) * (RY ^ 2)) - ((RX ^ 2) * (P1Prime.Y ^ 2)) - ((RY ^ 2) * (P1Prime.X ^ 2))
     
     If qTop < 0 Then ' We've been given an invalid arc. Calculate the correct value.
         
-        c = Sqr(((P1Prime.y ^ 2) / (RY ^ 2)) + ((P1Prime.x ^ 2) / (RX ^ 2)))
+        c = Sqr(((P1Prime.Y ^ 2) / (RY ^ 2)) + ((P1Prime.X ^ 2) / (RX ^ 2)))
         
         RX = RX * c
         RY = RY * c
@@ -1083,7 +1124,7 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
         qTop = 0
     End If
     
-    qBot = ((RX ^ 2) * (P1Prime.y ^ 2)) + ((RY ^ 2) * (P1Prime.x ^ 2))
+    qBot = ((RX ^ 2) * (P1Prime.Y ^ 2)) + ((RY ^ 2) * (P1Prime.X ^ 2))
     If qBot <> 0 Then
     Q = Sqr((qTop) / (qBot))
     Else
@@ -1093,14 +1134,14 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
     If largeArcFlag = sweepFlag Then Q = -Q
     
     ' Calculate Center Prime
-    CPrime.x = 0
+    CPrime.X = 0
     
-    If RY <> 0 Then CPrime.x = Q * ((RX * P1Prime.y) / RY)
-    If RX <> 0 Then CPrime.y = Q * -((RY * P1Prime.x) / RX)
+    If RY <> 0 Then CPrime.X = Q * ((RX * P1Prime.Y) / RY)
+    If RX <> 0 Then CPrime.Y = Q * -((RY * P1Prime.X) / RX)
     
     ' Calculate center point
-    centerPoint.x = ((Cos(Theta) * CPrime.x) - (Sin(Theta) * CPrime.y)) + ((P1.x + P2.x) / 2)
-    centerPoint.y = ((Sin(Theta) * CPrime.x) + (Cos(Theta) * CPrime.y)) + ((P1.y + P2.y) / 2)
+    centerPoint.X = ((Cos(Theta) * CPrime.X) - (Sin(Theta) * CPrime.Y)) + ((P1.X + P2.X) / 2)
+    centerPoint.Y = ((Sin(Theta) * CPrime.X) + (Cos(Theta) * CPrime.Y)) + ((P1.Y + P2.Y) / 2)
     
     ' TEMPTEMP
     
@@ -1109,9 +1150,9 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
     frmInterface.panY = 140
     
     
-    frmInterface.Picture1.Circle ((centerPoint.x + frmInterface.panX) * frmInterface.Zoom, (centerPoint.y + frmInterface.panY) * frmInterface.Zoom), 10, vbBlue
-    frmInterface.Picture1.Circle ((P1.x + frmInterface.panX) * frmInterface.Zoom, (P1.y + frmInterface.panY) * frmInterface.Zoom), 10, vbGreen
-    frmInterface.Picture1.Circle ((P2.x + frmInterface.panX) * frmInterface.Zoom, (P2.y + frmInterface.panY) * frmInterface.Zoom), 10, vbRed
+    frmInterface.Picture1.Circle ((centerPoint.X + frmInterface.panX) * frmInterface.Zoom, (centerPoint.Y + frmInterface.panY) * frmInterface.Zoom), 10, vbBlue
+    frmInterface.Picture1.Circle ((P1.X + frmInterface.panX) * frmInterface.Zoom, (P1.Y + frmInterface.panY) * frmInterface.Zoom), 10, vbGreen
+    frmInterface.Picture1.Circle ((P2.X + frmInterface.panX) * frmInterface.Zoom, (P2.Y + frmInterface.panY) * frmInterface.Zoom), 10, vbRed
     
     Debug.Print "Circle"
     
@@ -1170,14 +1211,14 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
         'pt4.X = pt4.X + pt3.X
         'pt4.Y = pt4.Y + pt3.Y
 
-        tempPoint.x = (RX * Cos(Ang)) + centerPoint.x
-        tempPoint.y = (RY * Sin(Ang)) + centerPoint.y
+        tempPoint.X = (RX * Cos(Ang)) + centerPoint.X
+        tempPoint.Y = (RY * Sin(Ang)) + centerPoint.Y
         
         tempAng = angleFromPoint(centerPoint, tempPoint) + Theta
         tempDist = pointDistance(centerPoint, tempPoint)
         
-        tempPoint.x = (tempDist * Cos(tempAng)) + centerPoint.x
-        tempPoint.y = (tempDist * Sin(tempAng)) + centerPoint.y
+        tempPoint.X = (tempDist * Cos(tempAng)) + centerPoint.X
+        tempPoint.Y = (tempDist * Sin(tempAng)) + centerPoint.Y
         
         
         
@@ -1187,7 +1228,7 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
         'tempPoint.Y = (Sin(Theta) * tempPoint.X) + (Cos(Theta) * tempPoint.Y)
         
 
-        addPoint tempPoint.x, tempPoint.y
+        addPoint tempPoint.X, tempPoint.Y
         
 
         Ang = Ang + AngStep
@@ -1195,7 +1236,7 @@ Function parseArcSegment(RX As Double, RY As Double, rotAng As Double, _
 
     ' Add the final point
 
-    addPoint P2.x, P2.y
+    addPoint P2.X, P2.Y
     
     
 End Function
@@ -1204,14 +1245,14 @@ Function rotatePoint(inPoint As pointD, Theta As Double, centerPoint As pointD) 
 
     rotatePoint = inPoint
     
-    rotatePoint.x = rotatePoint.x - centerPoint.x
-    rotatePoint.y = rotatePoint.y - centerPoint.y
+    rotatePoint.X = rotatePoint.X - centerPoint.X
+    rotatePoint.Y = rotatePoint.Y - centerPoint.Y
     
-    rotatePoint.x = (Cos(Theta) * rotatePoint.x) + (-Sin(Theta) * rotatePoint.y)
-    rotatePoint.y = (Sin(Theta) * rotatePoint.x) + (Cos(Theta) * rotatePoint.y)
+    rotatePoint.X = (Cos(Theta) * rotatePoint.X) + (-Sin(Theta) * rotatePoint.Y)
+    rotatePoint.Y = (Sin(Theta) * rotatePoint.X) + (Cos(Theta) * rotatePoint.Y)
     
-    rotatePoint.x = rotatePoint.x + centerPoint.x
-    rotatePoint.y = rotatePoint.y + centerPoint.y
+    rotatePoint.X = rotatePoint.X + centerPoint.X
+    rotatePoint.Y = rotatePoint.Y + centerPoint.Y
     
     
 
@@ -1245,17 +1286,17 @@ Function angleFromPoint(pCenter As pointD, pPoint As pointD) As Double
     ' Slope is rise over run
     Dim slope As Double
     
-    If pPoint.x = pCenter.x Then
+    If pPoint.X = pCenter.X Then
         ' Either 90 or 270
-        angleFromPoint = IIf(pPoint.y > pCenter.y, PI / 2, -PI / 2)
+        angleFromPoint = IIf(pPoint.Y > pCenter.Y, PI / 2, -PI / 2)
         
-    ElseIf pPoint.x > pCenter.x Then
+    ElseIf pPoint.X > pCenter.X Then
         ' 0 - 90 and 270-360
-        slope = (pPoint.y - pCenter.y) / (pPoint.x - pCenter.x)
+        slope = (pPoint.Y - pCenter.Y) / (pPoint.X - pCenter.X)
         angleFromPoint = Atn(slope)
     Else
         ' 180-270
-        slope = (pPoint.y - pCenter.y) / (pPoint.x - pCenter.x)
+        slope = (pPoint.Y - pCenter.Y) / (pPoint.X - pCenter.X)
         angleFromPoint = Atn(slope) + PI
     End If
     
@@ -1292,12 +1333,11 @@ Function finishLine()
     
 End Function
 
-Function addPoint(x As Double, y As Double, Optional noCutLineSegment As Boolean)
-    
-    Dim n As Long
+Function addPoint(X As Double, Y As Double, Optional noCutLineSegment As Boolean)
+Dim n As Long
     With pData(currentLine)
         
-        If .Points(UBound(.Points)).x = x And .Points(UBound(.Points)).y = y And UBound(.Points) > 0 Then
+        If .Points(UBound(.Points)).X = X And .Points(UBound(.Points)).Y = Y And UBound(.Points) > 0 Then
             ' No point to add
             'Debug.Print "same as last point"
             
@@ -1317,9 +1357,10 @@ Function addPoint(x As Double, y As Double, Optional noCutLineSegment As Boolean
             End If
             
         
-            .Points(n).x = x
-            .Points(n).y = y
+            .Points(n).X = X
+            .Points(n).Y = Y
             .SpecialNumPoints = n
+            .Points(n).pow = barvaX
             If noCutLineSegment Then .Points(n).noCut = 1
         End If
     End With
@@ -1419,7 +1460,7 @@ Function getAttr(attr As ChilkatXml, attrName As String, Optional DefaultValue)
 
 End Function
 
-Function pointIsInPoly(polyID As Long, x As Double, y As Double)
+Function pointIsInPoly(polyID As Long, X As Double, Y As Double)
 
     ' Determine if this point is inside the polygon.
     
@@ -1433,9 +1474,9 @@ Function pointIsInPoly(polyID As Long, x As Double, y As Double)
         
         For i = 1 To UBound(.Points)
         
-            If (.Points(i).y < y And .Points(j).y >= y _
-                Or .Points(j).y < y And .Points(i).y >= y) Then
-                    If (.Points(i).x + (y - .Points(i).y) / (.Points(j).y - .Points(i).y) * (.Points(j).x - .Points(i).x) < x) Then
+            If (.Points(i).Y < Y And .Points(j).Y >= Y _
+                Or .Points(j).Y < Y And .Points(i).Y >= Y) Then
+                    If (.Points(i).X + (Y - .Points(i).Y) / (.Points(j).Y - .Points(i).Y) * (.Points(j).X - .Points(i).X) < X) Then
                         pointIsInPoly = Not pointIsInPoly
                     End If
             End If
@@ -1554,10 +1595,10 @@ Function getPolyBounds(polyID As Long, ByRef minX As Double, ByRef minY As Doubl
     With pData(polyID)
         For j = 1 To UBound(.Points)
             With .Points(j)
-                minX = Min(minX, .x)
-                minY = Min(minY, .y)
-                maxX = Max(maxX, .x)
-                maxY = Max(maxY, .y)
+                minX = Min(minX, .X)
+                minY = Min(minY, .Y)
+                maxX = Max(maxX, .X)
+                maxY = Max(maxY, .Y)
             End With
         Next
     End With
@@ -1577,15 +1618,15 @@ Function getExtents(ByRef maxX As Double, ByRef maxY As Double, Optional ByRef m
             For j = 1 To UBound(.Points)
                 With .Points(j)
                     If setMin Then
-                        minX = Min(minX, .x)
-                        minY = Min(minY, .y)
+                        minX = Min(minX, .X)
+                        minY = Min(minY, .Y)
                     Else
                         setMin = True
-                        minX = .x
-                        minY = .y
+                        minX = .X
+                        minY = .Y
                     End If
-                    maxX = Max(maxX, .x)
-                    maxY = Max(maxY, .y)
+                    maxX = Max(maxX, .X)
+                    maxY = Max(maxY, .Y)
                 End With
             Next
         End With
@@ -1602,7 +1643,7 @@ Function canPolyFitInside(smallPoly As Long, bigPoly As Long)
     With pData(smallPoly)
         For i = 1 To UBound(.Points)
             With .Points(i)
-                If Not pointIsInPoly(bigPoly, .x, .y) Then
+                If Not pointIsInPoly(bigPoly, .X, .Y) Then
                     ' This point is outside.
                     Exit Function
                 Else
@@ -1628,7 +1669,7 @@ Function getPolyArea(polyID As Long) As Double
     
 End Function
 
-Function pointIsInPolyWithContain(polyID As Long, x As Double, y As Double) As Boolean
+Function pointIsInPolyWithContain(polyID As Long, X As Double, Y As Double) As Boolean
 
     ' Checks if the point is or isn't in the poly and deals with contained poly's also
     Dim cl As Collection
@@ -1636,12 +1677,12 @@ Function pointIsInPolyWithContain(polyID As Long, x As Double, y As Double) As B
     Dim isIn As Boolean
     If containList.Exists(polyID) Then Set cl = containList(polyID) ' A list of polygons that I contain
     
-    isIn = pointIsInPoly(polyID, x, y)
+    isIn = pointIsInPoly(polyID, X, Y)
     
     ' Check if it's in any of my kids. If so, it could be that it's NOT inside me.
     If Not cl Is Nothing Then
         For i = 1 To cl.count
-            If pointIsInPolyWithContain(cl(i), x, y) Then
+            If pointIsInPolyWithContain(cl(i), X, Y) Then
                 ' It's in my kid.
                 Exit Function
             End If
@@ -1661,7 +1702,7 @@ Sub rasterDocument(yStep As Double, currentLayer As String)
     Dim totalResult() As pointD
     Dim result() As pointD
     Dim n As Long
-    Dim y As Double
+    Dim Y As Double
     Dim i As Long
     Dim goingRight As Boolean
     
@@ -1672,8 +1713,8 @@ Sub rasterDocument(yStep As Double, currentLayer As String)
     ' We create a giant list of all the places where it intersects.
     ' And we take that and create a single line with many on/off points.
     
-    y = minY
-    Do Until y >= maxY
+    Y = minY
+    Do Until Y >= maxY
         
         ReDim totalResult(0)
             
@@ -1683,7 +1724,7 @@ Sub rasterDocument(yStep As Double, currentLayer As String)
                 
                 
                 ' Draw a line from the X left to the X right, and fill in every second line segment.
-                result = lineIntersectPoly(newPoint(minX - 50, y), newPoint(maxX + 50, y), p)
+                result = lineIntersectPoly(newPoint(minX - 50, Y), newPoint(maxX + 50, Y), p)
         
         
                 If UBound(result) > 0 Then
@@ -1707,18 +1748,19 @@ Sub rasterDocument(yStep As Double, currentLayer As String)
             
             i = 1
             ' Add a beginning point
-            addPoint totalResult(i).x + IIf(goingRight, -0.5, 0.5), totalResult(i).y, True
+            'addPoint totalResult(i).x + IIf(goingRight, -0.5, 0.5), totalResult(i).y, True   Pùvodní s pøesahem
+            addPoint totalResult(i).X + IIf(goingRight, 0.1, -0.1), totalResult(i).Y, True
             Do Until i > UBound(totalResult)
                 ' Start point
-                addPoint totalResult(i).x, totalResult(i).y, i Mod 2 = 0
+                addPoint totalResult(i).X, totalResult(i).Y, i Mod 2 = 0
                 i = i + 1
             Loop
             ' And an end point
-            addPoint totalResult(i - 1).x + IIf(goingRight, 0.5, -0.5), totalResult(i - 1).y, True
-
+            'addPoint totalResult(i - 1).x + IIf(goingRight, 0.5, -0.5), totalResult(i - 1).y, True
+             addPoint totalResult(i - 1).X + IIf(goingRight, 0, 0), totalResult(i - 1).Y, True
         End If
         
-        y = y + yStep
+        Y = Y + yStep
         '    frmInterface.Caption = "Progress : " & Round(y / maxY * 100) & " %"
         '    DoEvents
         ''End If
@@ -1737,7 +1779,7 @@ Sub rasterLinePoly(lineID As Long, yStep As Double, currentLayer As String)
     
     Dim maxX As Double, maxY As Double
     Dim minX As Double, minY As Double
-    Dim x As Double, y As Double
+    Dim X As Double, Y As Double
     Dim prevX As Double
     Dim Xadd As Double
     Dim result() As pointD
@@ -1759,11 +1801,12 @@ Sub rasterLinePoly(lineID As Long, yStep As Double, currentLayer As String)
     
     getPolyBounds lineID, minX, minY, maxX, maxY
     
-    y = minY
-    Do Until y >= maxY
+    Y = minY
+    Do Until Y >= maxY
         
         ' Draw a line from the X left to the X right, and fill in every second line segment.
-        result = lineIntersectPoly(newPoint(-10, y), newPoint(maxX + 50, y), lineID)
+        result = lineIntersectPoly(newPoint(-10, Y), newPoint(maxX + 50, Y), lineID)    'original
+        'result = lineIntersectPoly(newPoint(0, Y), newPoint(maxX + 0, Y), lineID)
 
         If UBound(result) > 0 Then
 
@@ -1776,8 +1819,8 @@ Sub rasterLinePoly(lineID As Long, yStep As Double, currentLayer As String)
                 ' Start point
                 If i + 1 <= UBound(result) Then
                     newLine currentLayer
-                    addPoint result(i).x, result(i).y
-                    addPoint result(i + 1).x, result(i + 1).y
+                    addPoint result(i).X, result(i).Y
+                    addPoint result(i + 1).X, result(i + 1).Y
                 End If
                 
                 i = i + 2
@@ -1785,11 +1828,11 @@ Sub rasterLinePoly(lineID As Long, yStep As Double, currentLayer As String)
         End If
         'TEMP
         'yStep = yStep * 1.05
-        y = y + yStep
+        Y = Y + yStep
         
         'If CLng(Y) Mod 10 = 0 Then
             'frmInterface.Caption = "Progress : " & Round(y / maxY * 100) & " %"
-            DoEvents
+            'DoEvents
         'End If
         
     Loop
@@ -1874,11 +1917,11 @@ Function orderArray(inRes() As pointD, Ascending As Boolean)
         sorted = False
         For i = 1 To UBound(inRes) - 1
             
-            If (inRes(i).x > inRes(i + 1).x And Not Ascending) Or (inRes(i).x < inRes(i + 1).x And Ascending) Then
+            If (inRes(i).X > inRes(i + 1).X And Not Ascending) Or (inRes(i).X < inRes(i + 1).X And Ascending) Then
                 ' swap
-                b = inRes(i).x
-                inRes(i).x = inRes(i + 1).x
-                inRes(i + 1).x = b
+                b = inRes(i).X
+                inRes(i).X = inRes(i + 1).X
+                inRes(i + 1).X = b
                 sorted = True
             End If
         Next
@@ -1937,20 +1980,20 @@ Function mergeConnectedLines()
                 doMerge = False
                 For j = 1 To UBound(pData)
                     If j <> i And pData(j).LayerID = pData(i).LayerID Then
-                        If pData(i).Points(iCount).x = pData(j).Points(1).x And _
-                           pData(i).Points(iCount).y = pData(j).Points(1).y Then
+                        If pData(i).Points(iCount).X = pData(j).Points(1).X And _
+                           pData(i).Points(iCount).Y = pData(j).Points(1).Y Then
                             
                             ' OK, this shape starts where my shape ends.
-                            Debug.Print "SHAPE " & i & " AND " & j & " X: ", pData(i).Points(iCount).x, pData(j).Points(1).x
-                            Debug.Print "SHAPE " & i & " AND " & j & " Y: ", pData(i).Points(iCount).y, pData(j).Points(1).y
+                            Debug.Print "SHAPE " & i & " AND " & j & " X: ", pData(i).Points(iCount).X, pData(j).Points(1).X
+                            Debug.Print "SHAPE " & i & " AND " & j & " Y: ", pData(i).Points(iCount).Y, pData(j).Points(1).Y
                             
                             doMerge = True
                             doFlip = False
                             Exit For
                         End If
                             
-                        If pData(i).Points(iCount).x = pData(j).Points(UBound(pData(j).Points)).x And _
-                           pData(i).Points(iCount).y = pData(j).Points(UBound(pData(j).Points)).y Then
+                        If pData(i).Points(iCount).X = pData(j).Points(UBound(pData(j).Points)).X And _
+                           pData(i).Points(iCount).Y = pData(j).Points(UBound(pData(j).Points)).Y Then
                             ' OK, this shape ends where my shape ends.
                             doMerge = True
                             doFlip = True ' Since its the end that matched, we need to flip it first.
@@ -1992,8 +2035,8 @@ Function mergeConnectedLines()
     ' Finally, look for polygons that have a start and end point at the same co-ordinate and mark them as fillable.
     For i = 1 To UBound(pData)
         With pData(i)
-            If .Points(1).x = .Points(UBound(.Points)).x And _
-               .Points(1).y = .Points(UBound(.Points)).y Then
+            If .Points(1).X = .Points(UBound(.Points)).X And _
+               .Points(1).Y = .Points(UBound(.Points)).Y Then
                 
                     ' End of shape matches start
                     ' Therefore it is fillable.
@@ -2092,7 +2135,7 @@ Public Sub SwapLine(ByRef A As typLine, ByRef b As typLine)
 
 End Sub
 
-Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, PPIMode As Boolean, PPIVal As Long, LoopMode As Boolean, Loops As Long, RaiseDist As Double)
+Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, PPIMode As Boolean, PPIVal As Long, LoopMode As Boolean, Loops As Long, RaiseDist As Double, LaserMAXMode As Boolean, LaserMAXVal As Long, ReductionMode As Boolean)
 
 
     ' Export GCODE!
@@ -2102,13 +2145,17 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
     Dim scalar As Long
     Dim tLayer As String
     Dim t As String
-    
-        
+    Dim LaMAX As Long
+    Dim bex As Double
+    Dim bey As Double
+    Dim prt As Boolean
+    Dim desetm As String
+                
     Dim minFeedRate As Long
     Dim maxFeedRate  As Long
     maxFeedRate = 200
     minFeedRate = 15
-    
+    desetm = left("0.000000000", 2 + frmExport.Label11)
     
     f = FreeFile
     ' Draw the lines.
@@ -2129,10 +2176,14 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
         Dim cutCount As Long
         Dim cuts As Long ' Defocusde cuts cut the same thing many times
         
-        
-        
-        
-    
+       ' If LaserMAXMode Then
+            'Print #f, "S" & PPIVal & " (PPI mode with this many pulses per inch)"
+         '   LaMAX = Int(LaserMAXVal / 255) + 1
+         ' Else
+        '  LaMAX = 1
+        'End If
+            
+            
         maxX = EXPORT_EXTENTS_X
         maxY = EXPORT_EXTENTS_Y
         
@@ -2143,18 +2194,20 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
         
         
         ' Go to the corners
-        Print #f, "G20 (Units are in Inches)"
-        Print #f, "F" & Format(feedRate, "0.00000")
+        If mesure_l = "in" Then Print #f, "G20 (Units are in Inches)"
+        If mesure_l = "mm" Then Print #f, "G21 (Units are in mm)"
+        Print #f, "F" & Format(feedRate, "0")
         Print #f, "G61 (Go to exact corners)" ' Added Sep 21, 2016
         
         If PPIMode Then
             Print #f, "S" & PPIVal & " (PPI mode with this many pulses per inch)"
         End If
         
+        
         If LoopMode Then
         
             Print #f, "#201 = " & Loops & " (number of passes)"
-            Print #f, "#200 = " & Format(RaiseDist * 0.0393701, "0.000000") & " (move the bed up incrementally by this much in inches)"
+            Print #f, "#200 = " & Format(RaiseDist * 0.0393701, desetm) & " (move the bed up incrementally by this much in inches)"
             Print #f, "#300 = 0 (bed movement distance storage variable)"
             Print #f, "#100 = 1 (layer number storage variable)"
             
@@ -2210,8 +2263,8 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
                                 ' Bring the W back up
                                 Print #1, "G0 W0"
                                 ' Reset the feed rate
-                                Print #f, "F" & Format(feedRate, "0.00000")
-                            End If
+                                Print #f, "F" & Format(feedRate, "0")
+                                End If
                             
                             tLayer = .LayerID
                         End If
@@ -2224,23 +2277,52 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
                         
                         
                         For cuts = 1 To cutCount
-                            
+                                                  
                             For j = 1 To UBound(.Points)
                                 With .Points(j)
                                     
                                     If j = 1 Then ' First point, just GO there.
-                                        Print #f, "G0 X" & Format(.x * scalar, "0.00000") & " Y" & Format((maxY - .y) * scalar, "0.00000")
+                                        t = "G0 X" & Format(.X * scalar, desetm) & " Y" & Format((maxY - .Y) * scalar, desetm) & " (Lile " & i & ")"
+                                        t = Replace(t, ",", ".")
+                                        Print #f, t
                                         'Print #f, "G1 z-0.0010"
                                         
                                         ' Turn on the spindle
                                         If PPIMode Then
                                             Print #f, "M3"
                                         Else
-                                            Print #f, "M3 S1"
+                                            'Print #f, "M3 S1"
+                                            If LaserMAXMode Then
+                                             'Print #f, "S" & PPIVal & " (PPI mode with this many pulses per inch)"
+                                               LaMAX = Int(LaserMAXVal / 255) + 1
+                                               If .pow = "" Then
+                                                .pow = 255
+                                               End If
+                                               Print #f, "M3 S" & Format(Int(LaMAX * .pow) * scalar, "0")
+                                             
+                                             Else
+                                            Print #f, "M3 S" & Format(LaserMAXVal * scalar, "0")
+                                           End If
+                                            'Print #f, "M3 S" & Format(Int(LaMAX * .pow) * scalar, "0")
+                                           
                                         End If
                                         'Print #f, "G0 Z -0.0100"
                                     Else
-                                        t = "G1 X" & Format(.x * scalar, "0.00000") & " Y" & Format((maxY - .y) * scalar, "0.00000")
+                                        
+                                        t = "G0 X" & Format(.X * scalar, desetm) & " Y" & Format((maxY - .Y) * scalar, desetm)
+                                        t = Replace(t, ",", ".")
+                                        
+                                        If ReductionMode Then
+                                           If bex = Round(.X, 2) And bey = Round(maxY - .Y, 2) Then
+                                              prt = False
+                                            Else
+                                              prt = True
+                                            End If
+                                          bex = Round(.X, 2)
+                                          bey = Round(maxY - .Y, 2)
+                                        Else
+                                         prt = True
+                                        End If
                                         
                                         ' Are we CUTTING to this point, or not?
                                         If lastCutting And pData(i).Points(j - 1).noCut = 1 Then
@@ -2258,12 +2340,17 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
                                             If PlungeZ Then
                                                 Print #f, "G0 Z -0.5"
                                             Else
-                                                t = t & " M62 P0" ' START cutting
+                                                't = t & " M62 P0" ' START cutting
+                                                
                                             End If
                                             
                                             lastCutting = True
                                         End If
-                                        Print #f, t
+                                         
+                                        If prt Then
+                                          Print #f, t
+                                        End If
+                                        'Print #f, t
                                     End If
                                 End With
                             Next
@@ -2273,9 +2360,9 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
                                 For j = UBound(.Points) To 1 Step -1
                                     With .Points(j)
                                         If j = UBound(pData(i).Points) Then ' First point, just GO there.
-                                            Print #f, "G0 X" & Format(.x * scalar, "0.00000") & " Y" & Format((maxY - .y) * scalar, "0.00000")
+                                            Print #f, "G0 X" & Format(.X * scalar, desetm) & " Y" & Format((maxY - .Y) * scalar, desetm)
                                         Else
-                                            t = "G1 X" & Format(.x * scalar, "0.00000") & " Y" & Format((maxY - .y) * scalar, "0.00000")
+                                            t = "G0 X" & Format(.X * scalar, desetm) & " Y" & Format((maxY - .Y) * scalar, desetm)
                                             If lastCutting And pData(i).Points(j - 1).noCut = 1 Then
                                                 t = t & " M63 P0" ' STOP cutting
                                                 lastCutting = False
@@ -2298,7 +2385,10 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
                         'Print #f, "G0 Z 0.0100"
                         
                         'Print #f, "G1 Z0.0010"
-                        Print #f, ""
+                        
+                       
+                      
+                       Print #f, ""
                     End If
                     
                 End If
@@ -2307,6 +2397,7 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
         Next
             
         Print #f, "M5"
+        
         If PlungeZ Then Print #f, "G0 Z 0.2"
         
         If LoopMode Then
@@ -2315,7 +2406,7 @@ Function exportGCODE(outFile As String, feedRate As Double, PlungeZ As Boolean, 
             Print #f, "#100 = [#100+1] (add one to the layer counter)"
             Print #f, "o101 ENDWHILE"
         End If
-        
+        Print #f, "G0 X0 Y0"
         Print #f, "M30"
     Close #f
 

@@ -9,8 +9,8 @@ Public Type typRGB
 End Type
 
 Public Type typXYZ
-    X As Double
-    Y As Double
+    x As Double
+    y As Double
     z As Double
 End Type
 
@@ -29,7 +29,7 @@ End Type
 Public Type typCMYK
     c As Long
     M As Long
-    Y As Long
+    y As Long
     K As Long
 End Type
 
@@ -225,18 +225,18 @@ Function RGBtoXYZ(inRGB As typRGB) As typXYZ
     var_B = var_B * 100
     
     'Observer. = 2°, Illuminant = D65
-    RGBtoXYZ.X = var_R * 0.4124 + var_G * 0.3576 + var_B * 0.1805
-    RGBtoXYZ.Y = var_R * 0.2126 + var_G * 0.7152 + var_B * 0.0722
+    RGBtoXYZ.x = var_R * 0.4124 + var_G * 0.3576 + var_B * 0.1805
+    RGBtoXYZ.y = var_R * 0.2126 + var_G * 0.7152 + var_B * 0.0722
     RGBtoXYZ.z = var_R * 0.0193 + var_G * 0.1192 + var_B * 0.9505
 
 End Function
 
 Function XYZtoLAB(inXYZ As typXYZ) As typLAB
     ' Convert XYZ color space to Hunter-Lab
-    XYZtoLAB.L = 10 * Sqr(inXYZ.Y)
+    XYZtoLAB.L = 10 * Sqr(inXYZ.y)
     
-    If inXYZ.Y <> 0 Then XYZtoLAB.A = 17.5 * (((1.02 * inXYZ.X) - inXYZ.Y) / Sqr(inXYZ.Y))
-    If inXYZ.Y <> 0 Then XYZtoLAB.b = 7 * ((inXYZ.Y - (0.847 * inXYZ.z)) / Sqr(inXYZ.Y))
+    If inXYZ.y <> 0 Then XYZtoLAB.A = 17.5 * (((1.02 * inXYZ.x) - inXYZ.y) / Sqr(inXYZ.y))
+    If inXYZ.y <> 0 Then XYZtoLAB.b = 7 * ((inXYZ.y - (0.847 * inXYZ.z)) / Sqr(inXYZ.y))
 
 End Function
 
@@ -245,7 +245,7 @@ Function loadPantone(inFile As String)
     Dim f As Long
     Dim i As Long
     Dim n As Long
-    Dim X, X2
+    Dim x, X2
     Dim c As String
     
     ReDim pantoneList(0)
@@ -261,12 +261,12 @@ Function loadPantone(inFile As String)
         Close f
         
         ' Split and translate
-        X = Split(G, vbCrLf)
+        x = Split(G, vbCrLf)
         
-        For i = 0 To UBound(X)
+        For i = 0 To UBound(x)
         
-            If X(i) <> "" Then
-                X2 = Split(X(i), Chr(9)) 'split by tabs
+            If x(i) <> "" Then
+                X2 = Split(x(i), Chr(9)) 'split by tabs
                 
                 n = UBound(pantoneList) + 1
                 ReDim Preserve pantoneList(n)
@@ -289,21 +289,21 @@ End Function
 
 Function RGBtoCMYK(inRGB As typRGB) As typCMYK
     
-    Dim c As Double, M As Double, Y As Double, K As Double
+    Dim c As Double, M As Double, y As Double, K As Double
     
     c = 1 - (inRGB.R / 255)
     M = 1 - (inRGB.G / 255)
-    Y = 1 - (inRGB.b / 255)
-    K = Min(c, Min(M, Y))
+    y = 1 - (inRGB.b / 255)
+    K = Min(c, Min(M, y))
     
     c = Min(1, Max(0, c - K))
     M = Min(1, Max(0, M - K))
-    Y = Min(1, Max(0, Y - K))
+    y = Min(1, Max(0, y - K))
     K = Min(1, Max(0, K))
     
     RGBtoCMYK.c = c * 100
     RGBtoCMYK.M = M * 100
-    RGBtoCMYK.Y = Y * 100
+    RGBtoCMYK.y = y * 100
     RGBtoCMYK.K = K * 100
     
 End Function
@@ -311,7 +311,7 @@ End Function
 Function CMYKtoRGB(inCMYK As typCMYK) As typRGB
     CMYKtoRGB.R = ((1 - (inCMYK.K / 100)) * (1 - (inCMYK.c / 100))) * 255
     CMYKtoRGB.G = ((1 - (inCMYK.K / 100)) * (1 - (inCMYK.M / 100))) * 255
-    CMYKtoRGB.b = ((1 - (inCMYK.K / 100)) * (1 - (inCMYK.Y / 100))) * 255
+    CMYKtoRGB.b = ((1 - (inCMYK.K / 100)) * (1 - (inCMYK.y / 100))) * 255
 End Function
 
 Function textColorBasedOnBackground(inC As Long) As Long
@@ -326,7 +326,7 @@ Function textColorBasedOnBackground(inC As Long) As Long
 End Function
 
 Function CMYKtoHex(inCMYK As typCMYK) As String
-    CMYKtoHex = fixZeros(Hex(inCMYK.c)) & fixZeros(Hex(inCMYK.M)) & fixZeros(Hex(inCMYK.Y)) & fixZeros(Hex(inCMYK.K))
+    CMYKtoHex = fixZeros(Hex(inCMYK.c)) & fixZeros(Hex(inCMYK.M)) & fixZeros(Hex(inCMYK.y)) & fixZeros(Hex(inCMYK.K))
 End Function
 
 Function HextoCMYK(inHex As String) As typCMYK
@@ -339,7 +339,7 @@ Function HextoCMYK(inHex As String) As typCMYK
     If Len(inHex) = 8 Then
         HextoCMYK.c = Val("&H" & Mid(inHex, 1, 2))
         HextoCMYK.M = Val("&H" & Mid(inHex, 3, 2))
-        HextoCMYK.Y = Val("&H" & Mid(inHex, 5, 2))
+        HextoCMYK.y = Val("&H" & Mid(inHex, 5, 2))
         HextoCMYK.K = Val("&H" & Mid(inHex, 7, 2))
     End If
 

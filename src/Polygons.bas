@@ -85,7 +85,7 @@ Private Function doPoly(polyID, a As pointD, B As pointD, result() As pointD)
         ' Do my kids
         If containList.Exists(polyID) Then Set cl = containList(polyID) ' A list of polygons that I contain
         If Not cl Is Nothing Then
-            For K = 1 To cl.Count
+            For K = 1 To cl.count
                 doPoly cl(K), a, B, result
             Next
         End If
@@ -227,3 +227,4 @@ Function addFillPolies(polyFills() As POINTAPI, polyID As Long)
     Next
 
 End Function
+

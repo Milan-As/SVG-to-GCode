@@ -12,7 +12,7 @@ Function rasterFile(inFile As String)
     Dim p As PictureBox
     Dim pW As Long, pH As Long
     Dim scalar As Double
-    Dim X As Long, Y As Long
+    Dim x As Long, y As Long
     Dim RY As Double
     
     Dim c As Long
@@ -37,30 +37,30 @@ Function rasterFile(inFile As String)
     
     ' Now scan the picture from left to right and build the lines
     For RY = 0 To pH Step 0.5
-        Y = CLng(RY)
+        y = CLng(RY)
         newLine
         addPoint 0, RY * scalar
         lastColor = -1
                 
-        For X = 0 To pW
+        For x = 0 To pW
             ' Get the color of this point
-            c = p.Point(X, Y)
+            c = p.POINT(x, y)
             
             ' Convert to greyscale
             crr = convertVBtoRGB(c)
             grey = ((crr.R + crr.G + crr.b) / 3) * (GREYLEVELS / 255) ' Convert to 0 to GREYLEVELS
                         
-            frmInterface.Picture1.PSet (X, Y), RGB(grey * (255 / GREYLEVELS), grey * (255 / GREYLEVELS), grey * (255 / GREYLEVELS))
+            frmInterface.Picture1.PSet (x, y), RGB(grey * (255 / GREYLEVELS), grey * (255 / GREYLEVELS), grey * (255 / GREYLEVELS))
             
                         
             ' Draw a line to this point
             If grey <> lastColor Then
                 If lastColor <> -1 Then
-                    addPoint X * scalar, RY * scalar
+                    addPoint x * scalar, RY * scalar
                     pData(currentLine).greyLevel = lastColor
                 
                     newLine
-                    addPoint X * scalar, RY * scalar
+                    addPoint x * scalar, RY * scalar
                 End If
                 
                 lastColor = grey
@@ -70,7 +70,7 @@ Function rasterFile(inFile As String)
     
         ' Finish last line
         If lastColor <> -1 Then
-            addPoint (X - 1) * scalar, RY * scalar
+            addPoint (x - 1) * scalar, RY * scalar
             pData(currentLine).greyLevel = lastColor
         End If
     Next
