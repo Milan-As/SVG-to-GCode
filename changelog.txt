@@ -1,4 +1,12 @@
-
+25.4.2021
+Version 1.2.7
+(source code is extensive and always difficult to navigate, sorry for any mistakes)
+- detection of the opened SVG file (tested only by Inkscape) on the color of the object in the basic gray palette and scale (inch or mm)
+- the color of the object can be used as laser power (black / 255 = 100% power --- gray 50% / 127 = 50% power ...) with the possibility of additional changes in the Sheet (L = xxx) button right
+- G-Code export, possibility to set HW laser power (PWM), correction of coordinate notation (G0 X 1,00 to G0 X 1.00) with possibility to choose decimal places and reduction of repeating coordinates one after the other
+- export respects the scale units in which the file is open (G20 > inches and G21 > mm)
+- vertical scale adjusted for better clarity with information in which units are worked
+- attempt to repair the filling - in progress
 3:07 PM 7/17/2017
 Version 1.2.6
 - Heavily sped up importing of large shapes
