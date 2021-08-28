@@ -195,13 +195,9 @@ Private Sub cmdCancel_Click()
 End Sub
 
 Private Sub Form_Load()
-If mesure_l = "in" Then
-  Label4.Caption = "inch"
-  Label5.Caption = "inch"
-Else
-  Label4.Caption = mesure_l
-  Label5.Caption = mesure_l
-End If
+
+  Label4.Caption = frmInterface.cmdMesure.Caption
+  Label5.Caption = Label4.Caption
 End Sub
 
 Private Sub txtHeight_Change()

@@ -539,7 +539,8 @@ Private Sub Form_Load()
 
     End If
     VScroll1.Value = 2
-    Label3.Caption = mesure_l & "/min"
+    Label3.Caption = frmInterface.cmdMesure.Caption & "/min"
+    mesure_l = left(frmInterface.cmdMesure.Caption, 2)
     End Sub
 
 Private Sub Text1_Change()
@@ -554,7 +555,7 @@ Private Sub Check1_Click()
 
 End Sub
 
-Private Sub Frame2_DragDrop(Source As Control, X As Single, Y As Single)
+Private Sub Frame2_DragDrop(Source As Control, x As Single, y As Single)
 
 End Sub
 
@@ -564,4 +565,5 @@ des = "G0 X 12.123456789"
 Label10.Caption = left(des, 8 + VScroll1.Value)
 Label11.Caption = VScroll1.Value
 If VScroll1.Value > 9 Then VScroll1.Value = 9
+If VScroll1.Value < 1 Then VScroll1.Value = 1
 End Sub

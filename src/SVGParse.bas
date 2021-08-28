@@ -30,6 +30,8 @@ Public Type typLine
     
     isDel As Boolean ' Deleted on next iteration
     pow  As Double
+    SelectON As Boolean
+    
 End Type
 
 Public containList As New Scripting.Dictionary
@@ -242,7 +244,7 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                    If mesure_l = "mm" Or mesure_l = "in" Then
                     ' MsgBox ("Scale is in " & mesure_l), vbInformation
                      Else
-                     MsgBox ("Attention, the document has the wrong ruler. The document should be in mm or inch or machine scale. The document is in the ruler " & mesure_l & "."), vbInformation
+                     MsgBox ("Attention, the document has the wrong ruler. The document should be in mm or inch or machine scale. The document is in the ruler " & mesure_l & ". Use SCALE for correction."), vbInformation
                    End If
             Case "g" ' g is GROUP
                 beforeGroup = currentLine
@@ -365,6 +367,7 @@ Function parseSVGKids(inEle As ChilkatXml, Optional currentLayer As String)
                 End Select
                 If barva = "" Then barva = barvaX
                 pData(currentLine).Points(1).pow = barva
+                pData(currentLine).SelectON = False
                 ' Shape transformations
                 If getAttr(X, "transform", "") <> "" Then
                     ' Transform these lines
@@ -383,7 +386,7 @@ End Function
 
 Function parseCircle(cX As Double, cY As Double, Radi As Double)
 
-    Dim A As Double
+    Dim a As Double
     Dim X As Double, Y As Double
     Dim rr As Long
     
@@ -391,10 +394,10 @@ Function parseCircle(cX As Double, cY As Double, Radi As Double)
     If Radi > 100 Then rr = 1
     
     
-    For A = 0 To 360 Step rr
+    For a = 0 To 360 Step rr
         
-        X = Cos(A * (PI / 180)) * Radi + cX
-        Y = Sin(A * (PI / 180)) * Radi + cY
+        X = Cos(a * (PI / 180)) * Radi + cX
+        Y = Sin(a * (PI / 180)) * Radi + cY
         
         addPoint X, Y
         
@@ -408,7 +411,7 @@ End Function
 
 Function parseEllipse(cX As Double, cY As Double, RadiX As Double, RadiY As Double)
 
-    Dim A As Double
+    Dim a As Double
     Dim X As Double, Y As Double
     Dim rr As Long
     
@@ -416,10 +419,10 @@ Function parseEllipse(cX As Double, cY As Double, RadiX As Double, RadiY As Doub
     If RadiX > 100 Or RadiY > 100 Then rr = 1
     
     
-    For A = 0 To 360 Step rr
+    For a = 0 To 360 Step rr
         
-        X = Cos(A * (PI / 180)) * RadiX + cX
-        Y = Sin(A * (PI / 180)) * RadiY + cY
+        X = Cos(a * (PI / 180)) * RadiX + cX
+        Y = Sin(a * (PI / 180)) * RadiY + cY
         
         addPoint X, Y
         
@@ -495,7 +498,7 @@ Function transformLine(lineID As Long, transformText As String)
     
 End Function
 
-Function multiplyLineByMatrix(polyID As Long, A As Double, b As Double, c As Double, D As Double, e As Double, f As Double)
+Function multiplyLineByMatrix(polyID As Long, a As Double, B As Double, c As Double, D As Double, e As Double, f As Double)
     ' Miltiply a line/poly by a transformation matrix
     ' [ A C E ]
     ' [ B D F ]
@@ -510,8 +513,8 @@ Function multiplyLineByMatrix(polyID As Long, A As Double, b As Double, c As Dou
     With pData(polyID)
         For j = 1 To UBound(.Points)
             oldPoint = .Points(j)
-            .Points(j).X = (A * oldPoint.X) + (c * oldPoint.Y) + e
-            .Points(j).Y = (b * oldPoint.X) + (D * oldPoint.Y) + f
+            .Points(j).X = (a * oldPoint.X) + (c * oldPoint.Y) + e
+            .Points(j).Y = (B * oldPoint.X) + (D * oldPoint.Y) + f
         Next
     End With
     
@@ -1911,7 +1914,7 @@ Function orderArray(inRes() As pointD, Ascending As Boolean)
 
     ' Order the return array of points.
     Dim i As Long
-    Dim b As Double
+    Dim B As Double
     Dim sorted As Boolean
     Do
         sorted = False
@@ -1919,9 +1922,9 @@ Function orderArray(inRes() As pointD, Ascending As Boolean)
             
             If (inRes(i).X > inRes(i + 1).X And Not Ascending) Or (inRes(i).X < inRes(i + 1).X And Ascending) Then
                 ' swap
-                b = inRes(i).X
+                B = inRes(i).X
                 inRes(i).X = inRes(i + 1).X
-                inRes(i + 1).X = b
+                inRes(i + 1).X = B
                 sorted = True
             End If
         Next
@@ -2127,11 +2130,11 @@ Function optimizePolys()
         
 End Function
 
-Public Sub SwapLine(ByRef A As typLine, ByRef b As typLine)
+Public Sub SwapLine(ByRef a As typLine, ByRef B As typLine)
     Dim c As typLine
-    c = A
-    A = b
-    b = c
+    c = a
+    a = B
+    B = c
 
 End Sub
 
